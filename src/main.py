@@ -1,4 +1,3 @@
-import logging
 import sys
 import asyncio
 import csv
@@ -18,17 +17,25 @@ from streamrip.db import Database, Dummy
 from streamrip.media import PendingSingle, Track
 from streamrip.metadata import SearchResults
 
-logging.basicConfig(level=logging.DEBUG, force=True)
-
 logger.remove()
+
+format = (
+    "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | "
+    "<level>{level: <8}</level> | "
+    "<cyan>{function}</cyan>:<cyan>{line}</cyan> | "
+    "{extra} | <level>{message}</level>"
+)
+
 logger.add(
     sys.stderr,
-    format=(
-        "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | "
-        "<level>{level: <8}</level> | "
-        "<cyan>{function}</cyan>:<cyan>{line}</cyan> | "
-        "{extra} | <level>{message}</level>"
-    ),
+    backtrace=False,
+    diagnose=False,
+    format=format,
+)
+
+logger.add(
+    "logs/out.log",
+    format=format,
 )
 
 
