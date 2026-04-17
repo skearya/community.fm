@@ -1,0 +1,17 @@
+[project]
+name = "downloader"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "loguru>=0.7.3",
+    "rich>=13.9.4",
+    "streamrip",
+]
+
+[tool.uv.sources]
+streamrip = { git = "https://github.com/nathom/streamrip.git", rev = "dev" }
+
+[dependency-groups]
+dev = ["ty>=0.0.31"]
