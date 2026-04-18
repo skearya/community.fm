@@ -1,3 +1,5 @@
+import rich
+import yt_dlp
 import sys
 import asyncio
 import csv
@@ -159,6 +161,18 @@ async def resolve(
 
     await track.rip()
     return track
+
+
+def youtube(track: SpotifyTrack):
+    ydl_opts = {"format": "bestaudio/best"}
+
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        info = ydl.extract_info(f"ytsearch:{track.isrc}")
+
+        if len(info["entries"]) == 0:
+            return
+
+        rich.print(info)
 
 
 async def main():
