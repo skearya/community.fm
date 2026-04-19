@@ -11,3 +11,6 @@ wheels/
 
 # Logs
 logs
+
+# Other
+.DS_Store
