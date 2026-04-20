@@ -10,7 +10,7 @@ class Stream(commands.Cog):
     def __init__(self, bot: CustomBot):
         self.bot = bot
 
-    @app_commands.command()
+    @app_commands.command(description="Start playing the radio in the VC you're in.")
     @app_commands.guild_only()
     async def join(self, interaction: Interaction):
         assert interaction.guild is not None
@@ -31,7 +31,7 @@ class Stream(commands.Cog):
             after=lambda e: print(f"Player error: {e}") if e else None,
         )
 
-    @app_commands.command()
+    @app_commands.command(description="Stop playing the radio.")
     @app_commands.guild_only()
     async def leave(self, interaction: Interaction):
         assert interaction.guild is not None
