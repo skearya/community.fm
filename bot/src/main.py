@@ -1,11 +1,10 @@
-import asyncio
 from os import environ
 
 import discord
 from discord import Intents
 from discord.ext import commands
 
-TEST_GUILD = discord.Object(id=environ.get("TEST_GUILD", "?"))
+TEST_GUILD = discord.Object(id=environ["TEST_GUILD"])
 
 
 class CustomBot(commands.Bot):
@@ -16,7 +15,7 @@ class CustomBot(commands.Bot):
         )
 
     async def setup_hook(self):
-        await self.load_extension("ext.general")
+        await self.load_extension("ext.stream")
 
         self.tree.copy_global_to(guild=TEST_GUILD)
         await self.tree.sync(guild=TEST_GUILD)
@@ -25,10 +24,8 @@ class CustomBot(commands.Bot):
         print(f"Logged in as {self.user}")
 
 
-async def main():
-    async with CustomBot() as bot:
-        await bot.start(environ.get("BOT_TOKEN", "?"))
-
-
 if __name__ == "__main__":
-    asyncio.run(main())
+    if not discord.opus.is_loaded():
+        discord.opus.load_opus(environ["OPUS_LIB_PATH"])
+
+    CustomBot().run(environ["BOT_TOKEN"])
