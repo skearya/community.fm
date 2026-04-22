@@ -4,7 +4,7 @@ import discord
 from discord import Intents
 from discord.ext import commands
 
-TEST_GUILD = discord.Object(id=environ["TEST_GUILD"])
+TEST_GUILD = discord.Object(id=environ["DISCORD_TEST_GUILD"])
 
 
 class CustomBot(commands.Bot):
@@ -22,10 +22,3 @@ class CustomBot(commands.Bot):
 
     async def on_ready(self):
         print(f"Logged in as {self.user}")
-
-
-if __name__ == "__main__":
-    if not discord.opus.is_loaded():
-        discord.opus.load_opus(environ["OPUS_LIB_PATH"])
-
-    CustomBot().run(environ["BOT_TOKEN"])

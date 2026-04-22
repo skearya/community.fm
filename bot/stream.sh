@@ -1,1 +1,0 @@
-ffmpeg -i https://radio.isabitch.lol/stream.ogg -f s16le -ar 48000 -ac 2 -loglevel warning -blocksize 131072 -

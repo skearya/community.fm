@@ -12,5 +12,8 @@ wheels/
 # Logs
 logs
 
+# Secrets
+.env
+
 # Other
 .DS_Store

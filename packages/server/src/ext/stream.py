@@ -1,9 +1,10 @@
+from os import environ
 import discord
 from discord import Interaction, Member, app_commands
 from discord.ext import commands
 from main import CustomBot
 
-STREAM_URL = "https://radio.isabitch.lol/stream.ogg"
+STREAM_URL = environ["RADIO_STREAM_URL"]
 
 
 class Stream(commands.Cog):

@@ -1,0 +1,5 @@
+- fix the crazy liquidsoap source leak (logs: investigate.txt)
+- optimal stream encoding (make sure metadata works)
+- discord bot reads Exportify data posted in a #channel
+- pls as proper library
+- ignore music in .hist

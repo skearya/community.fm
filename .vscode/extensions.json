@@ -1,0 +1,8 @@
+{
+	"recommendations": [
+		"astral-sh.ty",
+		"charliermarsh.ruff",
+		"savonet.vscode-liquidsoap",
+		"esbenp.prettier-vscode"
+	]
+}

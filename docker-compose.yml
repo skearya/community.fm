@@ -1,0 +1,34 @@
+services:
+    icecast:
+        image: ghcr.io/skearya/icecast:2.5.0-alpine
+        container_name: icecast
+        restart: unless-stopped
+        ports:
+            - 8000:8000
+        environment:
+            - ICECAST_SOURCE_PASSWORD
+            - ICECAST_RELAY_PASSWORD
+            - ICECAST_ADMIN_PASSWORD
+            - ICECAST_ADMIN_USERNAME
+            - ICECAST_ADMIN_EMAIL
+            - ICECAST_LOCATION
+            - ICECAST_HOSTNAME
+            - ICECAST_MAX_CLIENTS
+            - ICECAST_MAX_SOURCES
+        volumes:
+            - ./icecast/icecast.xml:/etc/icecast.xml:ro
+    liquidsoap:
+        image: savonet/liquidsoap:v2.4.4
+        container_name: liquidsoap
+        entrypoint: ["liquidsoap", "/etc/liquidsoap/script.liq"]
+        restart: unless-stopped
+        ports:
+            - 8001:8001
+        environment:
+            - ICECAST_SOURCE_PASSWORD
+            - LIVE_SOURCE_PASSWORD
+        volumes:
+            - ./liquidsoap:/etc/liquidsoap:ro
+            - ${MUSIC_DIRECTORY}:/music:ro
+        depends_on:
+            - icecast
