@@ -1,23 +1,11 @@
 import asyncio
 import csv
 import sys
-from dataclasses import dataclass
-from typing import Literal
 
-from deezer.errors import DataException
 from loguru import logger
-from streamrip.client import Client as StreamripClient
-from streamrip.client import (
-    DeezerClient,
-    QobuzClient,
-    SoundcloudClient,
-    TidalClient,
-)
-from streamrip.config import DEFAULT_CONFIG_PATH, Config
-from streamrip.db import Database, Dummy
-from streamrip.media import PendingSingle
-from streamrip.metadata import SearchResults
-from yt_dlp import YoutubeDL
+from sources.streamrip import StreamripPls
+from sources.youtube import YoutubePls
+from utils import Request
 
 logger.remove()
 
@@ -40,205 +28,25 @@ logger.add(
     format=format,
 )
 
-type Client = (
-    DeezerClient
-    | QobuzClient
-    | SoundcloudClient
-    | TidalClient
-    | Literal["YouTube Music"]
-)
-
-
-@dataclass
-class SpotifyTrack:
-    uri: str
-    name: str
-    artist_uris: str
-    artist_names: str
-    album_uri: str
-    album_name: str
-    album_artist_uris: str
-    album_artist_names: str
-    album_release_date: str
-    album_image_url: str
-    disc_number: str
-    track_number: str
-    track_duration: str
-    track_preview_url: str
-    explicit: str
-    popularity: str
-    isrc: str
-    added_by: str
-    added_at: str
-
-
-@dataclass
-class Download:
-    path: str
-
-
-async def rip(
-    clients: list[Client],
-    config: Config,
-    db: Database,
-    track: SpotifyTrack,
-) -> Download | None:
-    track_logger = logger.bind(song=(track.artist_names, track.name, track.isrc))
-
-    for client in clients:
-        try:
-            match client:
-                case QobuzClient():
-                    source = "Qobuz"
-                    dl = await qobuz(client, config, db, track)
-                case TidalClient():
-                    source = "Tidal"
-                    dl = await tidal(client, config, db, track)
-                case DeezerClient():
-                    source = "Deezer"
-                    dl = await deezer(client, config, db, track)
-                case SoundcloudClient():
-                    source = "SoundCloud"
-                    dl = await soundcloud(client, config, db, track)
-                case "YouTube Music":
-                    source = "YouTube Music"
-                    dl = await youtube(track)
-
-            if dl is not None:
-                track_logger.success(f"Downloaded from {source}: {dl.path}")
-                return dl
-            else:
-                track_logger.debug(f"{source} missing song, checking next source")
-        except Exception:
-            track_logger.exception(f"{source} exception")
-
-    track_logger.critical("Failed to download after trying every source!")
-    return None
-
-
-async def qobuz(
-    qobuz: QobuzClient, config: Config, db: Database, track: SpotifyTrack
-) -> Download | None:
-    pages = await qobuz.search("track", track.isrc)
-    search = SearchResults.from_pages("qobuz", "track", pages)
-
-    if len(search.results) == 0:
-        return None
-
-    return await resolve(qobuz, config, db, search.results[0].id)
-
-
-async def tidal(
-    tidal: TidalClient, config: Config, db: Database, track: SpotifyTrack
-) -> Download | None:
-    result = await tidal._api_request(
-        "/tracks",
-        {"filter[isrc]": track.isrc},
-        "https://openapi.tidal.com/v2",
-    )
-
-    if len(result["data"]) == 0:
-        return None
-
-    return await resolve(tidal, config, db, result["data"][0]["id"])
-
-
-async def deezer(
-    deezer: DeezerClient, config: Config, db: Database, track: SpotifyTrack
-) -> Download | None:
-    try:
-        result = deezer.client.api.get_track_by_ISRC(track.isrc)
-    except DataException:
-        return None
-
-    return await resolve(deezer, config, db, result["id"])
-
-
-async def soundcloud(
-    soundcloud: SoundcloudClient, config: Config, db: Database, track: SpotifyTrack
-) -> Download | None:
-    pages = await soundcloud.search("track", f"{track.artist_names} {track.name}")
-    search = SearchResults.from_pages("soundcloud", "track", pages)
-
-    if len(search.results) == 0:
-        return None
-
-    return await resolve(soundcloud, config, db, search.results[0].id)
-
-
-async def resolve(
-    client: StreamripClient, config: Config, db: Database, id: str
-) -> Download | None:
-    track = await PendingSingle(id, client, config, db).resolve()
-
-    if track is None:
-        raise Exception(f"{client.source} resolve failed")
-
-    await track.rip()
-
-    return Download(track.download_path)
-
-
-async def youtube(track: SpotifyTrack) -> Download | None:
-    def run(track: SpotifyTrack) -> Download | None:
-        ydl_opts = {
-            "quiet": True,
-            "format": "bestaudio/best",
-            "outtmpl": "%(title)s.%(ext)s",
-            "writethumbnail": True,
-            "postprocessors": [
-                {"key": "FFmpegExtractAudio", "preferredcodec": "m4a"},
-                {"key": "FFmpegMetadata"},
-                {"key": "EmbedThumbnail"},
-            ],
-        }
-
-        with YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(f"ytsearch1:{track.isrc}")
-
-            if len(info["entries"]) == 0:
-                return None
-
-            return Download(info["entries"][0]["requested_downloads"][0]["filepath"])
-
-    return await asyncio.to_thread(run, track)
-
 
 async def main():
-    config = Config(DEFAULT_CONFIG_PATH)
-
-    config.session.cli.text_output = False
-    config.session.cli.progress_bars = False
-
-    db = Database(
-        downloads=Dummy(),
-        failed=Dummy(),
-    )
-
-    clients: list[Client] = [
-        QobuzClient(config),
-        TidalClient(config),
-        DeezerClient(config),
-        "YouTube Music",
-        SoundcloudClient(config),
-    ]
-
-    try:
-        for client in clients:
-            if isinstance(client, StreamripClient):
-                await client.login()
-
+    async with StreamripPls() as streamrip, YoutubePls() as youtube:
         with open("src/tests/stress.csv", newline="") as file:
-            reader = csv.reader(file)
-            header = next(reader)
+            for row in csv.DictReader(file):
+                request = Request(
+                    "?", row["ISRC"], row["Track Name"], row["Artist Name(s)"]
+                )
 
-            for row in reader:
-                assert len(header) == len(row)
-                await rip(clients, config, db, SpotifyTrack(*row))
-    finally:
-        for client in clients:
-            if isinstance(client, StreamripClient) and client.logged_in:
-                await client.session.close()
+                track_logger = logger.bind(item=str(request))
+
+                dl = await streamrip.rip(request, track_logger) or await youtube.rip(
+                    request, track_logger
+                )
+
+                if dl is not None:
+                    track_logger.success(f"Downloaded from {dl.source}: {dl.path}")
+                else:
+                    track_logger.critical("Failed to download!")
 
 
 if __name__ == "__main__":
