@@ -8,7 +8,7 @@ oops = single("/etc/liquidsoap/assets/oops.mp3")
 radio_intro = single("/etc/liquidsoap/assets/radio-intro.mp3")
 stream_intro = single("/etc/liquidsoap/assets/stream-intro.mp3")
 
-# Build the feed using the server
+# Start building the feed from the server
 radio =
   request.dynamic(fun () -> request.create(http.get("http://server:8080/next")))
 

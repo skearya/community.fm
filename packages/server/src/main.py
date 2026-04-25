@@ -10,7 +10,7 @@ async def main():
 
     await asyncio.gather(
         server.start(state),
-        # bot.start(state),
+        bot.start(state),
     )
 
 
