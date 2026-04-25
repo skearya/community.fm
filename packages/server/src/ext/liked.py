@@ -1,4 +1,5 @@
 import csv
+import aiohttp
 from io import StringIO
 from typing import Optional
 
@@ -33,10 +34,12 @@ class LikedSongs(commands.Cog):
         if attachment is None:
             return
 
-        response = requests.get(attachment.url)
-        response.raise_for_status()
+        async with aiohttp.ClientSession() as session:
+            async with session.get(attachment.url) as response:
+                response.raise_for_status()
+                csv_text = await response.text()
 
-        songs = self._parse_songs(response.text)
+        songs = self._parse_songs(csv_text)
         if not songs:
             await message.reply("Invalid CSV.")
             return
