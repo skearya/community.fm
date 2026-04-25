@@ -1,12 +1,15 @@
-from os import environ
+import asyncio
 
-import discord
-from bot import CustomBot
+import bot
+import server
 
-BOT_TOKEN = environ["DISCORD_BOT_TOKEN"]
+
+async def main():
+    await asyncio.gather(
+        server.start(),
+        bot.start()
+    )
+
 
 if __name__ == "__main__":
-    if "OPUS_LIB_PATH" in environ:
-        discord.opus.load_opus(environ["OPUS_LIB_PATH"])
-
-    CustomBot().run(BOT_TOKEN)
+    asyncio.run(main())

@@ -801,11 +801,15 @@ name = "server"
 version = "0.1.0"
 source = { virtual = "packages/server" }
 dependencies = [
+    { name = "aiohttp" },
     { name = "discord-py", extra = ["voice"] },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "discord-py", extras = ["voice"], specifier = ">=2.7.1" }]
+requires-dist = [
+    { name = "aiohttp", specifier = ">=3.13.5" },
+    { name = "discord-py", extras = ["voice"], specifier = ">=2.7.1" },
+]
 
 [[package]]
 name = "simple-term-menu"

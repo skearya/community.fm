@@ -1,10 +1,11 @@
-from typing import Optional
-from discord import Interaction, app_commands, Message
-from discord.ext import commands
-from main import CustomBot
-from io import StringIO
-import requests
 import csv
+from io import StringIO
+from typing import Optional
+
+import requests
+from bot import CustomBot
+from discord import Interaction, Message, app_commands
+from discord.ext import commands
 
 # TODO: read channel on startup, get csvs from newest members
 

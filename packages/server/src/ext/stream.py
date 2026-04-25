@@ -1,8 +1,9 @@
 from os import environ
+
 import discord
+from bot import CustomBot
 from discord import Interaction, Member, app_commands
 from discord.ext import commands
-from main import CustomBot
 
 STREAM_URL = environ["RADIO_STREAM_URL"]
 
