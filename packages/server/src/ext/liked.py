@@ -1,14 +1,11 @@
 import csv
-import aiohttp
 from io import StringIO
 from typing import Optional
+from loguru import logger
 
-import requests
 from bot import CustomBot
-from discord import Interaction, Message, app_commands
+from discord import Message, utils, Attachment
 from discord.ext import commands
-
-# TODO: read channel on startup, get csvs from newest members
 
 LIKED_SONGS_CHANNEL = "liked-songs"
 CSV_ATTRIBUTES = ["Track Name", "Artist Name(s)", "ISRC"]
@@ -20,34 +17,52 @@ class LikedSongs(commands.Cog):
         self.bot = bot
         self.songs: dict[int, list[dict]] = {}
 
-    @app_commands.command(description="?")
-    @app_commands.guild_only()
-    async def cmd(self, interaction: Interaction):
-        pass
+    @commands.Cog.listener()
+    async def on_ready(self) -> None:
+        """Get each user's most recently uploaded songs."""
+        logger.info("Getting liked songs...")
+        for guild in self.bot.guilds:
+            channel = utils.get(guild.text_channels, name=LIKED_SONGS_CHANNEL)
+            if channel is None:
+                continue
+
+            async for message in channel.history(oldest_first=False):
+                if message.author.id in self.songs:
+                    continue
+                songs = await self._extract_songs(message)
+                if songs is None:
+                    continue
+                self.songs[message.author.id] = songs
+        logger.info(f"Got liked songs for {len(self.songs)} user(s).")
 
     @commands.Cog.listener()
     async def on_message(self, message: Message) -> None:
-        if message.author.bot or str(message.channel) != LIKED_SONGS_CHANNEL:
+        """Update a user's liked songs upon sending a CSV."""
+        author = message.author
+        if author.bot or str(message.channel) != LIKED_SONGS_CHANNEL:
             return
 
-        attachment = self._find_csv_attachment(message)
+        if self._find_csv(message) is None:
+            return
+
+        songs = await self._extract_songs(message)
+        if songs is None:
+            await message.reply("Invalid CSV. Please use https://exportify.app/")
+            return
+
+        self.songs[author.id] = songs
+        await message.reply(f"Updated {len(songs)} liked songs.")
+        logger.info(f"Updated {len(songs)} liked song(s) for: {author.name}")
+
+    async def _extract_songs(self, message: Message) -> Optional[list[dict[str, str]]]:
+        """Find, fetch, and parse a CSV from a message."""
+        attachment = self._find_csv(message)
         if attachment is None:
-            return
+            return None
+        csv_text = await self._fetch_csv(attachment)
+        return self._parse_csv(csv_text)
 
-        async with aiohttp.ClientSession() as session:
-            async with session.get(attachment.url) as response:
-                response.raise_for_status()
-                csv_text = await response.text()
-
-        songs = self._parse_songs(csv_text)
-        if not songs:
-            await message.reply("Invalid CSV.")
-            return
-
-        self.songs[message.author.id] = songs
-        await message.reply("Updated liked songs.")
-
-    def _find_csv_attachment(self, message: Message):
+    def _find_csv(self, message: Message) -> Optional[Attachment]:
         return next(
             (
                 a
@@ -57,16 +72,18 @@ class LikedSongs(commands.Cog):
             None,
         )
 
-    def _parse_songs(self, csv_text: str) -> Optional[list[dict]]:
+    async def _fetch_csv(self, attachment: Attachment) -> str:
+        async with self.bot.session.get(attachment.url) as response:
+            response.raise_for_status()
+            return await response.text()
+
+    def _parse_csv(self, csv_text: str) -> Optional[list[dict[str, str]]]:
         reader = csv.DictReader(StringIO(csv_text))
-        if not reader.fieldnames or not all(
+        if reader.fieldnames is None or not all(
             attr in reader.fieldnames for attr in CSV_ATTRIBUTES
         ):
             return None
-
-        return [
-            {col: row[col] for col in CSV_ATTRIBUTES if col in row} for row in reader
-        ]
+        return [{col: row[col] for col in CSV_ATTRIBUTES} for row in reader]
 
 
 async def setup(bot: CustomBot):

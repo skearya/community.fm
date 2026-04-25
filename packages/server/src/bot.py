@@ -1,3 +1,4 @@
+from aiohttp import ClientSession
 from loguru import logger
 from os import environ
 
@@ -18,11 +19,17 @@ class CustomBot(commands.Bot):
         )
 
     async def setup_hook(self):
+        self.session = ClientSession()
+
         await self.load_extension("ext.stream")
         await self.load_extension("ext.liked")
 
         self.tree.copy_global_to(guild=TEST_GUILD)
         await self.tree.sync(guild=TEST_GUILD)
+
+    async def close(self) -> None:
+        await self.session.close()
+        await super().close()
 
     async def on_ready(self):
         logger.info(f"Logged in as {self.user}")
