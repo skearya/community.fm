@@ -2,12 +2,15 @@ import asyncio
 
 import bot
 import server
+from state import State
 
 
 async def main():
+    state = State()
+
     await asyncio.gather(
-        server.start(),
-        bot.start()
+        server.start(state),
+        # bot.start(state),
     )
 
 

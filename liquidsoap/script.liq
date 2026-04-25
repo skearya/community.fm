@@ -8,8 +8,9 @@ oops = single("/etc/liquidsoap/assets/oops.mp3")
 radio_intro = single("/etc/liquidsoap/assets/radio-intro.mp3")
 stream_intro = single("/etc/liquidsoap/assets/stream-intro.mp3")
 
-# Start building the feed with /music
-radio = playlist(reload_mode="watch", "/music")
+# Build the feed using the server
+radio =
+  request.dynamic(fun () -> request.create(http.get("http://server:8080/next")))
 
 # Skip blanks longer than 3 seconds
 radio = blank.skip(max_blank=3.0, radio)

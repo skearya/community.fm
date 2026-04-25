@@ -2,26 +2,28 @@ import asyncio
 
 from aiohttp import web
 from loguru import logger
+from state import State
 
 routes = web.RouteTableDef()
+STATE_KEY = web.AppKey("STATE_KEY", State)
 
 
-@routes.get("/get")
+@routes.get("/next")
 async def handle(request: web.Request) -> web.Response:
-    name = request.match_info.get("name", "Anonymous")
-    text = "Hello, " + name
+    state = request.app[STATE_KEY]
 
-    return web.Response(text=text)
+    return web.Response(text=state.mode.next())
 
 
-async def start():
+async def start(state: State):
     app = web.Application()
+    app[STATE_KEY] = state
     app.add_routes(routes)
 
     runner = web.AppRunner(app)
     await runner.setup()
 
-    site = web.TCPSite(runner)
+    site = web.TCPSite(runner, host="0.0.0.0", port=8080)
     await site.start()
 
     logger.info(f"HTTP server started at {site.name}")

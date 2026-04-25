@@ -1,4 +1,15 @@
 services:
+    server:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        container_name: server
+        restart: unless-stopped
+        ports:
+            - 8080:8080
+        environment:
+            - DISCORD_BOT_TOKEN
+            - DISCORD_TEST_GUILD
     icecast:
         image: ghcr.io/skearya/icecast:2.5.0-alpine
         container_name: icecast
@@ -17,6 +28,8 @@ services:
             - ICECAST_MAX_SOURCES
         volumes:
             - ./icecast/icecast.xml:/etc/icecast.xml:ro
+        depends_on:
+            - server
     liquidsoap:
         image: savonet/liquidsoap:v2.4.4
         container_name: liquidsoap
