@@ -39,7 +39,7 @@ async def main():
 
                 track_logger = logger.bind(item=str(request))
 
-                dl = await streamrip.rip(request, track_logger) or await youtube.rip(
+                dl = await streamrip.isrc(request, track_logger) or await youtube.rip(
                     request, track_logger
                 )
 
