@@ -47,21 +47,24 @@ radio =
     [live, radio, oops]
   )
 
+# Stream it out in OGG and MP3
 output.icecast(
-  %opus(
-    vbr = "constrained",
-    application = "audio",
-    complexity = 10,
-    max_bandwidth = "full_band",
-    samplerate = 48000,
-    bitrate = 192,
-    channels = 2,
-    signal = "music"
-  ),
+  %mp3,
   host="icecast",
   port=8000,
   password=environment.get("ICECAST_SOURCE_PASSWORD"),
-  mount="/opus",
+  send_icy_metadata=true,
+  mount="stream.mp3",
+  radio
+)
+
+output.icecast(
+  %vorbis.abr(bitrate = 192, max_bitrate = 256, min_bitrate = 128),
+  host="icecast",
+  port=8000,
+  password=environment.get("ICECAST_SOURCE_PASSWORD"),
+  send_icy_metadata=true,
+  mount="stream.ogg",
   radio
 )
 

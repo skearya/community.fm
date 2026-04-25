@@ -10,8 +10,11 @@ services:
         environment:
             - DISCORD_BOT_TOKEN
             - DISCORD_TEST_GUILD
+            - RADIO_STREAM_URL
+        volumes:
+            - ${MUSIC_DIRECTORY}:/music
     icecast:
-        image: ghcr.io/skearya/icecast:2.5.0-alpine
+        image: ghcr.io/libretime/icecast:2.4.4
         container_name: icecast
         restart: unless-stopped
         ports:
@@ -26,8 +29,6 @@ services:
             - ICECAST_HOSTNAME
             - ICECAST_MAX_CLIENTS
             - ICECAST_MAX_SOURCES
-        volumes:
-            - ./icecast/icecast.xml:/etc/icecast.xml:ro
         depends_on:
             - server
     liquidsoap:
