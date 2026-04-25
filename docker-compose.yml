@@ -10,6 +10,7 @@ services:
         environment:
             - DISCORD_BOT_TOKEN
             - DISCORD_TEST_GUILD
+            - RADIO_STREAM_URL
     icecast:
         image: ghcr.io/skearya/icecast:2.5.0-alpine
         container_name: icecast
