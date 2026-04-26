@@ -1,4 +1,4 @@
-from ext.models import LikedSong
+from models import LikedSong
 from modes.liked_mode import LikedSongsMode
 from modes.local_songs import LocalSongs
 from modes.radio_mode import RadioMode

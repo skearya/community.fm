@@ -3,7 +3,7 @@ import itertools
 from io import StringIO
 
 from bot import CustomBot
-from ext.models import LikedSong
+from models import LikedSong
 from discord import Attachment, Message, utils
 from discord.ext import commands
 from loguru import logger
