@@ -1,5 +1,9 @@
 # Use a Python image with uv pre-installed
-FROM ghcr.io/astral-sh/uv:python3.14-trixie
+FROM ghcr.io/astral-sh/uv:python3.14-trixie-slim
+
+# Install git
+RUN apt-get update && apt-get install -y git \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install the project into `/app`
 WORKDIR /app
