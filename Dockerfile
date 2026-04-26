@@ -2,7 +2,7 @@
 FROM ghcr.io/astral-sh/uv:python3.14-trixie-slim
 
 # Install git
-RUN apt-get update && apt-get install -y git libtiff6 libopenjp2-7 \
+RUN apt-get update && apt-get install -y git libtiff6 libopenjp2-7 ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
 # Install the project into `/app`
