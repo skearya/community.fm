@@ -4,6 +4,7 @@ import random
 from modes.radio_mode import RadioMode
 from typing import TYPE_CHECKING
 from loguru import logger
+from models import NO_NEXT
 
 if TYPE_CHECKING:
     from state import State
@@ -14,9 +15,9 @@ class LikedSongsMode(RadioMode):
         self.state = state
 
     async def next(self) -> str:
-        oops = "/etc/liquidsoap/assets/oops.mp3"
         if not self.state.liked_songs:
-            return oops
+            logger.info("No liked songs have been loaded.")
+            return NO_NEXT
 
         async with StreamripPls() as streamrip, YoutubePls() as youtube:
             song = random.choice(self.state.liked_songs)
@@ -31,4 +32,4 @@ class LikedSongsMode(RadioMode):
                 return dl.path
             else:
                 logger.info(f"Failed to download liked song: {song.name}")
-                return oops
+                return NO_NEXT
