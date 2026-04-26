@@ -1,22 +1,15 @@
 import csv
 import itertools
-from dataclasses import dataclass
 from io import StringIO
 
 from bot import CustomBot
+from ext.models import LikedSong
 from discord import Attachment, Message, utils
 from discord.ext import commands
 from loguru import logger
 
 LIKED_SONGS_CHANNEL = "liked-songs"
 CSV_CONTENT_TYPE = "text/csv"
-
-
-@dataclass
-class LikedSong:
-    name: str
-    artists: str
-    isrc: str
 
 
 class LikedSongs(commands.Cog):
