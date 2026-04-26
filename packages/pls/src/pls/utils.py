@@ -1,5 +1,6 @@
-from rapidfuzz import fuzz
 from dataclasses import dataclass
+
+from rapidfuzz import fuzz
 
 
 @dataclass

@@ -1,32 +1,11 @@
 import asyncio
 import csv
-import sys
 
 from loguru import logger
-from sources.streamrip import StreamripPls
-from sources.youtube import YoutubePls
-from utils import Request
 
-logger.remove()
-
-format = (
-    "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | "
-    "<level>{level: <8}</level> | "
-    "<cyan>{function}</cyan>:<cyan>{line}</cyan> | "
-    "{extra} | <level>{message}</level>"
-)
-
-logger.add(
-    sys.stderr,
-    backtrace=False,
-    diagnose=False,
-    format=format,
-)
-
-logger.add(
-    "logs/out.log",
-    format=format,
-)
+from pls.sources.streamrip import StreamripPls
+from pls.sources.youtube import YoutubePls
+from pls.utils import Request
 
 
 async def main():

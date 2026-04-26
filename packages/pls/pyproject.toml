@@ -17,3 +17,7 @@ streamrip = { git = "https://github.com/skearya/streamrip", rev = "dev" }
 
 [dependency-groups]
 dev = ["ty>=0.0.31"]
+
+[build-system]
+requires = ["uv_build>=0.11.7,<0.12.0"]
+build-backend = "uv_build"

@@ -1,8 +1,8 @@
-from os import environ
 import asyncio
+from os import environ
 from typing import TYPE_CHECKING
 
-from utils import Download, Request
+from pls.utils import Download, Request
 from yt_dlp import YoutubeDL
 
 if TYPE_CHECKING:

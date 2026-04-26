@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Iterator
 
 from deezer.errors import DataException
 from loguru import logger
+from pls.utils import Download, Request, similarity
 from streamrip.client import (
     Client,
     DeezerClient,
@@ -14,7 +15,6 @@ from streamrip.config import DEFAULT_CONFIG_PATH, Config
 from streamrip.db import Database, Dummy
 from streamrip.media import PendingSingle
 from streamrip.metadata import SearchResults, TrackSummary
-from utils import Download, Request, similarity
 
 if TYPE_CHECKING:
     from loguru import Logger
@@ -81,7 +81,8 @@ class StreamripPls:
         return None
 
     async def search(self, track: Request, logger: Logger) -> Download | None:
-        # [Similarity (0 - 100), Preference]
+        # [Similarity (0 - 100), Preference from client order (-i)]
+        # By using `-i` as a fallback to compare during sorting when ratings are equal, we will prefer higher quality clients
         type Score = tuple[float, int]
 
         similar: list[tuple[Score, TrackSummary, Client]] = []
@@ -105,7 +106,6 @@ class StreamripPls:
                         logger.debug(f"Perfect match on {source}")
                         return await self.resolve(client, item.id)
 
-                    # By using `-i` as a fallback to compare during sorting when ratings are equal, we will prefer higher quality clients
                     similar.append(((rating, -i), item, client))
             except Exception:
                 logger.exception(f"{source} exception")
