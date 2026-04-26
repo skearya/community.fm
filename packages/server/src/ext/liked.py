@@ -1,7 +1,7 @@
 import csv
 import itertools
+from dataclasses import dataclass
 from io import StringIO
-from typing import Optional
 
 from bot import CustomBot
 from discord import Attachment, Message, utils
@@ -9,14 +9,20 @@ from discord.ext import commands
 from loguru import logger
 
 LIKED_SONGS_CHANNEL = "liked-songs"
-CSV_ATTRIBUTES = ["Track Name", "Artist Name(s)", "ISRC"]
 CSV_CONTENT_TYPE = "text/csv"
+
+
+@dataclass
+class LikedSong:
+    name: str
+    artists: str
+    isrc: str
 
 
 class LikedSongs(commands.Cog):
     def __init__(self, bot: CustomBot):
         self.bot = bot
-        self.songs: dict[int, list[dict]] = {}
+        self.songs: dict[int, list[LikedSong]] = {}
 
     @commands.Cog.listener()
     async def on_ready(self) -> None:
@@ -55,15 +61,15 @@ class LikedSongs(commands.Cog):
         await message.reply(f"Updated {len(songs)} liked songs.")
         logger.info(f"Updated {len(songs)} liked song(s) for: {author.name}")
 
-    def _update_songs(self, user_id: int, songs: list[dict[str, str]]) -> None:
+    def _update_songs(self, user_id: int, songs: list[LikedSong]) -> None:
         self.songs[user_id] = songs
         unique_songs = {
-            song["ISRC"]: song
+            song.isrc: song
             for song in itertools.chain.from_iterable(self.songs.values())
         }
         self.bot.state.liked_songs = list(unique_songs.values())
 
-    async def _extract_songs(self, message: Message) -> Optional[list[dict[str, str]]]:
+    async def _extract_songs(self, message: Message) -> list[LikedSong] | None:
         """Find, fetch, and parse a CSV from a message."""
         attachment = self._find_csv(message)
         if attachment is None:
@@ -71,7 +77,7 @@ class LikedSongs(commands.Cog):
         csv_text = await self._fetch_csv(attachment)
         return self._parse_csv(csv_text)
 
-    def _find_csv(self, message: Message) -> Optional[Attachment]:
+    def _find_csv(self, message: Message) -> Attachment | None:
         return next(
             (
                 a
@@ -86,13 +92,17 @@ class LikedSongs(commands.Cog):
             response.raise_for_status()
             return await response.text()
 
-    def _parse_csv(self, csv_text: str) -> Optional[list[dict[str, str]]]:
+    def _parse_csv(self, csv_text: str) -> list[LikedSong] | None:
         reader = csv.DictReader(StringIO(csv_text))
         if reader.fieldnames is None or not all(
-            attr in reader.fieldnames for attr in CSV_ATTRIBUTES
+            attr in reader.fieldnames
+            for attr in ["Track Name", "Artist Name(s)", "ISRC"]
         ):
             return None
-        return [{col: row[col] for col in CSV_ATTRIBUTES} for row in reader]
+        return [
+            LikedSong(row["Track Name"], row["Artist Name(s)"], row["ISRC"])
+            for row in reader
+        ]
 
 
 async def setup(bot: CustomBot):
