@@ -574,7 +574,7 @@ sdist = { url = "https://files.pythonhosted.org/packages/cd/74/ad3d526f3bf7b6d3f
 [[package]]
 name = "pls"
 version = "0.1.0"
-source = { virtual = "packages/pls" }
+source = { editable = "packages/pls" }
 dependencies = [
     { name = "loguru" },
     { name = "rapidfuzz" },
@@ -804,6 +804,7 @@ dependencies = [
     { name = "aiohttp" },
     { name = "discord-py", extra = ["voice"] },
     { name = "loguru" },
+    { name = "pls" },
 ]
 
 [package.metadata]
@@ -811,6 +812,7 @@ requires-dist = [
     { name = "aiohttp", specifier = ">=3.13.5" },
     { name = "discord-py", extras = ["voice"], specifier = ">=2.7.1" },
     { name = "loguru", specifier = ">=0.7.3" },
+    { name = "pls", editable = "packages/pls" },
 ]
 
 [[package]]

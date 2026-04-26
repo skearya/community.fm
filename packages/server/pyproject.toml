@@ -8,4 +8,8 @@ dependencies = [
     "aiohttp>=3.13.5",
     "discord-py[voice]>=2.7.1",
     "loguru>=0.7.3",
+    'pls',
 ]
+
+[tool.uv.sources]
+pls = { workspace = true }
