@@ -28,7 +28,7 @@ class StreamripPls:
     def __init__(self):
         self.config = Config(DEFAULT_CONFIG_PATH)
 
-        self.config.session.downloads.folder = environ["MUSIC_DIRECTORY"]
+        self.config.session.downloads.folder = "/music"
         self.config.session.cli.text_output = False
         self.config.session.cli.progress_bars = False
 
