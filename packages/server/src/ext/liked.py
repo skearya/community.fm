@@ -1,3 +1,4 @@
+import itertools
 import csv
 from io import StringIO
 from typing import Optional
@@ -32,7 +33,7 @@ class LikedSongs(commands.Cog):
                 songs = await self._extract_songs(message)
                 if songs is None:
                     continue
-                self.songs[message.author.id] = songs
+                self._update_songs(message.author.id, songs)
         logger.info(f"Got liked songs for {len(self.songs)} user(s).")
 
     @commands.Cog.listener()
@@ -50,9 +51,17 @@ class LikedSongs(commands.Cog):
             await message.reply("Invalid CSV. Please use https://exportify.app/")
             return
 
-        self.songs[author.id] = songs
+        self._update_songs(author.id, songs)
         await message.reply(f"Updated {len(songs)} liked songs.")
         logger.info(f"Updated {len(songs)} liked song(s) for: {author.name}")
+
+    def _update_songs(self, user_id: int, songs: list[dict[str, str]]) -> None:
+        self.songs[user_id] = songs
+        unique_songs = {
+            song["ISRC"]: song
+            for song in itertools.chain.from_iterable(self.songs.values())
+        }
+        self.bot.state.liked_songs = list(unique_songs.values())
 
     async def _extract_songs(self, message: Message) -> Optional[list[dict[str, str]]]:
         """Find, fetch, and parse a CSV from a message."""
