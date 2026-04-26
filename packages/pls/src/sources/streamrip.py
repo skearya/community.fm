@@ -1,8 +1,6 @@
-import heapq
-from operator import itemgetter
+from os import environ
 from typing import TYPE_CHECKING, Iterator
 
-import rich
 from deezer.errors import DataException
 from loguru import logger
 from streamrip.client import (
@@ -29,6 +27,8 @@ class StreamripPls:
 
     def __init__(self):
         self.config = Config(DEFAULT_CONFIG_PATH)
+
+        self.config.session.downloads.folder = environ["MUSIC_DIRECTORY"]
         self.config.session.cli.text_output = False
         self.config.session.cli.progress_bars = False
 
@@ -81,7 +81,10 @@ class StreamripPls:
         return None
 
     async def search(self, track: Request, logger: Logger) -> Download | None:
-        similar: list[tuple[float, int, TrackSummary, Client]] = []
+        # [Similarity (0 - 100), Preference]
+        type Score = tuple[float, int]
+
+        similar: list[tuple[Score, TrackSummary, Client]] = []
 
         for i, (source, client) in enumerate(self.active_clients()):
             try:
@@ -103,18 +106,18 @@ class StreamripPls:
                         return await self.resolve(client, item.id)
 
                     # By using `-i` as a fallback to compare during sorting when ratings are equal, we will prefer higher quality clients
-                    similar.append((rating, -i, item, client))
+                    similar.append(((rating, -i), item, client))
             except Exception:
                 logger.exception(f"{source} exception")
 
         if len(similar) == 0:
             return None
 
-        similar.sort(key=lambda track: (track[0], track[1]))
+        similar.sort(key=lambda track: track[0])
 
-        rating, _pref, item, client = similar[-1]
+        rating, item, client = similar[-1]
 
-        if rating < 85.0:
+        if rating[0] < 85.0:
             logger.debug(f"Closest match: {rating:.2f}%, giving up")
             return None
 
