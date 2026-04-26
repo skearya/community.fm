@@ -4,9 +4,6 @@ from modes.radio_mode import RadioMode
 
 
 class State:
-    mode: RadioMode
-    liked_songs: list[dict[str, str]]
-
     def __init__(self):
-        self.mode = LocalSongs()
-        self.liked_songs = []
+        self.mode: RadioMode = LocalSongs()
+        self.liked_songs: list[dict[str, str]] = []

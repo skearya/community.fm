@@ -1,6 +1,6 @@
-import aiohttp
 from os import environ
 
+import aiohttp
 import discord
 from discord import Intents
 from discord.ext import commands
@@ -11,9 +11,6 @@ TEST_GUILD = discord.Object(id=environ["DISCORD_TEST_GUILD"])
 
 
 class CustomBot(commands.Bot):
-    state: State
-    session: aiohttp.ClientSession
-
     def __init__(self, state: State):
         intents = Intents.default()
         intents.message_content = True

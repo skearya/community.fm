@@ -1,12 +1,12 @@
-import itertools
 import csv
+import itertools
 from io import StringIO
 from typing import Optional
-from loguru import logger
 
 from bot import CustomBot
-from discord import Message, utils, Attachment
+from discord import Attachment, Message, utils
 from discord.ext import commands
+from loguru import logger
 
 LIKED_SONGS_CHANNEL = "liked-songs"
 CSV_ATTRIBUTES = ["Track Name", "Artist Name(s)", "ISRC"]

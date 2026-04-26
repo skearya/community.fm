@@ -1,5 +1,6 @@
 import random
 from pathlib import Path
+
 from modes.radio_mode import RadioMode
 
 MUSIC_DIR = Path("/music")
@@ -56,7 +57,8 @@ AUDIO_EXT = {
 
 
 class LocalSongs(RadioMode):
-    songs: list[Path] = []
+    def __init__(self):
+        self.songs: list[Path] = []
 
     def next(self) -> str:
         if len(self.songs) == 0:
