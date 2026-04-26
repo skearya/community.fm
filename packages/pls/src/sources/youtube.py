@@ -1,3 +1,4 @@
+from os import environ
 import asyncio
 from typing import TYPE_CHECKING
 
@@ -11,7 +12,7 @@ if TYPE_CHECKING:
 ydl_opts = {
     "quiet": True,
     "format": "bestaudio/best",
-    "outtmpl": "%(title)s.%(ext)s",
+    "outtmpl": f"{environ['MUSIC_DIRECTORY']}/%(title)s.%(ext)s",
     "writethumbnail": True,
     "postprocessors": [
         {"key": "FFmpegExtractAudio", "preferredcodec": "m4a"},
