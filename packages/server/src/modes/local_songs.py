@@ -60,7 +60,7 @@ class LocalSongs(RadioMode):
     def __init__(self):
         self.songs: list[Path] = []
 
-    def next(self) -> str:
+    async def next(self) -> str:
         if len(self.songs) == 0:
             self.reload()
 

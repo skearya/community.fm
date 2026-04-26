@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 ydl_opts = {
     "quiet": True,
     "format": "bestaudio/best",
-    "outtmpl": f"{environ['MUSIC_DIRECTORY']}/%(title)s.%(ext)s",
+    "outtmpl": "/music/%(title)s.%(ext)s",
     "writethumbnail": True,
     "postprocessors": [
         {"key": "FFmpegExtractAudio", "preferredcodec": "m4a"},

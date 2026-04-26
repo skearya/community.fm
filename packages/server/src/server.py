@@ -12,7 +12,7 @@ STATE_KEY = web.AppKey("STATE_KEY", State)
 async def handle(request: web.Request) -> web.Response:
     state = request.app[STATE_KEY]
 
-    return web.Response(text=state.mode.next())
+    return web.Response(text=await state.mode.next())
 
 
 async def start(state: State):

@@ -13,6 +13,7 @@ services:
             - RADIO_STREAM_URL
         volumes:
             - ${MUSIC_DIRECTORY}:/music
+            - ${STREAMRIP_CONFIG_PATH}:/root/.config/streamrip/config.toml
     icecast:
         image: ghcr.io/libretime/icecast:2.4.4
         container_name: icecast
