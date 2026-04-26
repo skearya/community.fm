@@ -1,5 +1,9 @@
+from pls import StreamripPls, YoutubePls
+from pls.utils import Request
+import random
 from modes.radio_mode import RadioMode
 from typing import TYPE_CHECKING
+from loguru import logger
 
 if TYPE_CHECKING:
     from state import State
@@ -9,8 +13,22 @@ class LikedSongsMode(RadioMode):
     def __init__(self, state: State):
         self.state = state
 
-    def next(self) -> str:
+    async def next(self) -> str:
+        oops = "/etc/liquidsoap/assets/oops.mp3"
         if not self.state.liked_songs:
-            return "/etc/liquidsoap/assets/oops.mp3"
+            return oops
 
-        return "/etc/liquidsoap/assets/stream-intro.mp3"
+        async with StreamripPls() as streamrip, YoutubePls() as youtube:
+            song = random.choice(self.state.liked_songs)
+            request = Request("?", song.isrc, song.name, song.artists)
+            song_logger = logger.bind(item=str(request))
+
+            dl = await streamrip.isrc(request, song_logger) or await youtube.rip(
+                request, song_logger
+            )
+            if dl is not None:
+                logger.info(f"Serving liked song: {dl.path}")
+                return dl.path
+            else:
+                logger.info(f"Failed to download liked song: {song.name}")
+                return oops
