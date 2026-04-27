@@ -8,7 +8,7 @@ from discord.ext import commands
 from loguru import logger
 from pls import Request
 
-LIKED_SONGS_CHANNEL = "liked-songs-test"
+LIKED_SONGS_CHANNEL = "liked-songs"
 CSV_CONTENT_TYPE = "text/csv"
 
 
