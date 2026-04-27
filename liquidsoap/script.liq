@@ -8,15 +8,13 @@ oops = single("/etc/liquidsoap/assets/oops.mp3")
 radio_intro = single("/etc/liquidsoap/assets/radio-intro.mp3")
 stream_intro = single("/etc/liquidsoap/assets/stream-intro.mp3")
 
-# Start building the feed from the server
-def next()
+def next() =
   uri = http.get("http://server:8080/next")
-  if uri != "NO_NEXT" then
-    request.create(uri)
-  else
-    null()
-  end
+
+  if uri != "NO_NEXT" then request.create(uri) else null end
 end
+
+# Build the feed from the server
 radio = request.dynamic(retry_delay=5.0, next)
 
 # Skip blanks longer than 3 seconds

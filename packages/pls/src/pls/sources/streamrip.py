@@ -1,9 +1,8 @@
-from os import environ
 from typing import TYPE_CHECKING, Iterator
 
 from deezer.errors import DataException
 from loguru import logger
-from pls.utils import Download, Request, similarity
+from pls.utils import Download, similarity
 from streamrip.client import (
     Client,
     DeezerClient,
@@ -15,20 +14,17 @@ from streamrip.config import DEFAULT_CONFIG_PATH, Config
 from streamrip.db import Database, Dummy
 from streamrip.media import PendingSingle
 from streamrip.metadata import SearchResults, TrackSummary
+from streamrip.rip.parse_url import parse_url
 
 if TYPE_CHECKING:
     from loguru import Logger
 
 
 class StreamripPls:
-    config: Config
-    db: Database
-    clients: dict[str, Client]
-
-    def __init__(self):
+    def __init__(self, downloads_folder: str):
         self.config = Config(DEFAULT_CONFIG_PATH)
 
-        self.config.session.downloads.folder = "/music"
+        self.config.session.downloads.folder = downloads_folder
         self.config.session.cli.text_output = False
         self.config.session.cli.progress_bars = False
 
@@ -44,7 +40,7 @@ class StreamripPls:
             "SoundCloud": SoundcloudClient(self.config),
         }
 
-    async def __aenter__(self) -> StreamripPls:
+    async def login(self) -> StreamripPls:
         for source, client in self.clients.items():
             try:
                 await client.login()
@@ -53,121 +49,132 @@ class StreamripPls:
 
         return self
 
-    async def __aexit__(self, _exc_type, _exc_val, _exc_tb):
+    async def logout(self):
         for client in self.clients.values():
             if hasattr(client, "session"):
                 await client.session.close()
 
-    async def isrc(self, track: Request, info: Logger) -> Download | None:
+    async def url(self, logger: Logger, url: str) -> Download | None:
+        parsed = parse_url(url)
+
+        if parsed is None:
+            logger.debug("Failed to parse URL")
+            return None
+
+        client = self.clients[parsed.source]
+        pending = await parsed.into_pending(client, self.config, self.db)
+
+        if not isinstance(pending, PendingSingle):
+            logger.warning("URL pointed to something other than a single")
+            return None
+
+        return await self.resolve(client, pending)
+
+    async def isrc(self, logger: Logger, isrc: str) -> Download | None:
         for source, client in self.active_clients():
             try:
                 match client:
                     case QobuzClient():
-                        dl = await self.qobuz(client, track)
+                        dl = await self.qobuz(client, isrc)
                     case TidalClient():
-                        dl = await self.tidal(client, track)
+                        dl = await self.tidal(client, isrc)
                     case DeezerClient():
-                        dl = await self.deezer(client, track)
+                        dl = await self.deezer(client, isrc)
                     case SoundcloudClient():
-                        dl = await self.soundcloud(client, track)
+                        continue
 
                 if dl is not None:
                     return dl
 
-                info.debug(f"{source} missing song, checking next source")
+                logger.debug(f"{source} missing ISRC, checking next")
             except Exception:
-                info.exception(f"{source} exception")
+                logger.exception(f"{source} exception")
 
         return None
 
-    async def search(self, track: Request, logger: Logger) -> Download | None:
-        # [Similarity (0 - 100), Preference from client order (-i)]
-        # By using `-i` as a fallback to compare during sorting when ratings are equal, we will prefer higher quality clients
+    async def search(self, logger: Logger, artist: str, name: str) -> Download | None:
+        PERFECT_MATCH_THRESHOLD = 99.0
+        MINIMUM_ACCEPTABLE_THRESHOLD = 85.0
+
+        # Score: [Similarity (0 - 100), Client preference by index (-i)]
         type Score = tuple[float, int]
 
         similar: list[tuple[Score, TrackSummary, Client]] = []
 
         for i, (source, client) in enumerate(self.active_clients()):
             try:
-                query = f"{track.artist} - {track.name}"
+                query = f"{artist} - {name}"
                 pages = await client.search("track", query)
                 search = SearchResults.from_pages(client.source, "track", pages)
 
                 if len(search.results) == 0:
-                    logger.debug(f"No search results on {source}")
+                    logger.debug(f"No results on {source}, checking next")
                     continue
 
                 for item in search.results:
-                    rating = similarity(
-                        track.name, item.name, track.artist, item.artist
-                    )
+                    score = similarity(name, item.name, artist, item.artist)
 
-                    if rating >= 99.0:
+                    if score >= PERFECT_MATCH_THRESHOLD:
                         logger.debug(f"Perfect match on {source}")
                         return await self.resolve(client, item.id)
 
-                    similar.append(((rating, -i), item, client))
+                    similar.append(((score, -i), item, client))
             except Exception:
                 logger.exception(f"{source} exception")
 
         if len(similar) == 0:
             return None
 
-        similar.sort(key=lambda track: track[0])
+        similar.sort(key=lambda track: track[0], reverse=True)
+        score, item, client = similar[0]
 
-        rating, item, client = similar[-1]
-
-        if rating[0] < 85.0:
-            logger.debug(f"Closest match: {rating:.2f}%, giving up")
+        if score[0] < MINIMUM_ACCEPTABLE_THRESHOLD:
+            logger.debug(f"Closest match: {score[0]:.2f}%, giving up")
             return None
 
         try:
-            return await self.resolve(client, item.id)
+            return await self.resolve(
+                client, PendingSingle(item.id, client, self.config, self.db)
+            )
         except Exception:
-            logger.exception(f"{source} exception")
+            logger.exception(f"{client.source} exception")
+            return None
 
-    async def qobuz(self, qobuz: QobuzClient, track: Request) -> Download | None:
-        pages = await qobuz.search("track", track.isrc)
+    async def qobuz(self, qobuz: QobuzClient, isrc: str) -> Download | None:
+        pages = await qobuz.search("track", isrc)
         search = SearchResults.from_pages("qobuz", "track", pages)
 
         if len(search.results) == 0:
             return None
 
-        return await self.resolve(qobuz, search.results[0].id)
+        return await self.resolve(
+            qobuz, PendingSingle(search.results[0].id, qobuz, self.config, self.db)
+        )
 
-    async def tidal(self, tidal: TidalClient, track: Request) -> Download | None:
+    async def tidal(self, tidal: TidalClient, isrc: str) -> Download | None:
         result = await tidal._api_request(
-            "/tracks",
-            {"filter[isrc]": track.isrc},
-            "https://openapi.tidal.com/v2",
+            "/tracks", {"filter[isrc]": isrc}, "https://openapi.tidal.com/v2"
         )
 
         if len(result["data"]) == 0:
             return None
 
-        return await self.resolve(tidal, result["data"][0]["id"])
+        return await self.resolve(
+            tidal, PendingSingle(result["data"][0]["id"], tidal, self.config, self.db)
+        )
 
-    async def deezer(self, deezer: DeezerClient, track: Request) -> Download | None:
+    async def deezer(self, deezer: DeezerClient, isrc: str) -> Download | None:
         try:
-            result = deezer.client.api.get_track_by_ISRC(track.isrc)
+            result = deezer.client.api.get_track_by_ISRC(isrc)
         except DataException:
             return None
 
-        return await self.resolve(deezer, result["id"])
+        return await self.resolve(
+            deezer, PendingSingle(result["id"], deezer, self.config, self.db)
+        )
 
-    async def soundcloud(
-        self, soundcloud: SoundcloudClient, track: Request
-    ) -> Download | None:
-        pages = await soundcloud.search("track", f"{track.artist} {track.name}")
-        search = SearchResults.from_pages("soundcloud", "track", pages)
-
-        if len(search.results) == 0:
-            return None
-
-        return await self.resolve(soundcloud, search.results[0].id)
-
-    async def resolve(self, client: Client, id: str) -> Download | None:
-        track = await PendingSingle(id, client, self.config, self.db).resolve()
+    async def resolve(self, client: Client, single: PendingSingle) -> Download:
+        track = await single.resolve()
 
         if track is None:
             raise Exception(f"{client.source} resolve failed")

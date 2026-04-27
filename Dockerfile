@@ -1,7 +1,7 @@
 # Use a Python image with uv pre-installed
 FROM ghcr.io/astral-sh/uv:python3.14-trixie-slim
 
-# Install git
+# Install system dependencies
 RUN apt-get update && apt-get install -y git libtiff6 libopenjp2-7 ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 

@@ -1,38 +1,37 @@
 import asyncio
-from os import environ
 from typing import TYPE_CHECKING
 
-from pls.utils import Download, Request
+from pls.utils import Download
 from yt_dlp import YoutubeDL
 
 if TYPE_CHECKING:
     from loguru import Logger
 
 
-ydl_opts = {
-    "quiet": True,
-    "format": "bestaudio/best",
-    "outtmpl": "/music/%(title)s.%(ext)s",
-    "writethumbnail": True,
-    "postprocessors": [
-        {"key": "FFmpegExtractAudio", "preferredcodec": "m4a"},
-        {"key": "FFmpegMetadata"},
-        {"key": "EmbedThumbnail"},
-    ],
-}
-
-
 class YoutubePls:
-    async def __aenter__(self) -> YoutubePls:
-        return self
+    def __init__(self, downloads_folder: str):
+        self.ydl_opts = {
+            "quiet": True,
+            "format": "bestaudio/best",
+            "outtmpl": f"{downloads_folder}/%(title)s.%(ext)s",
+            "writethumbnail": True,
+            "postprocessors": [
+                {"key": "FFmpegExtractAudio", "preferredcodec": "m4a"},
+                {"key": "FFmpegMetadata"},
+                {"key": "EmbedThumbnail"},
+            ],
+        }
 
-    async def __aexit__(self, _exc_type, _exc_val, _exc_tb):
+    async def login(self):
         pass
 
-    async def rip(self, track: Request, logger: Logger) -> Download | None:
-        def run(track: Request) -> Download | None:
-            with YoutubeDL(ydl_opts) as ydl:
-                info = ydl.extract_info(f"ytsearch1:{track.isrc}")
+    async def logout(self):
+        pass
+
+    async def isrc(self, logger: Logger, isrc: str) -> Download | None:
+        def run(isrc: str) -> Download | None:
+            with YoutubeDL(self.ydl_opts) as ydl:
+                info = ydl.extract_info(f"ytsearch1:{isrc}")
 
                 if len(info["entries"]) == 0:
                     logger.debug("YouTube missing song")
@@ -42,4 +41,4 @@ class YoutubePls:
                     "YouTube", info["entries"][0]["requested_downloads"][0]["filepath"]
                 )
 
-        return await asyncio.to_thread(run, track)
+        return await asyncio.to_thread(run, isrc)

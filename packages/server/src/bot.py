@@ -41,8 +41,5 @@ class CustomBot(commands.Bot):
 async def start(state: State):
     discord.utils.setup_logging()
 
-    if "OPUS_LIB_PATH" in environ:
-        discord.opus.load_opus(environ["OPUS_LIB_PATH"])
-
     async with CustomBot(state) as bot:
         await bot.start(environ["DISCORD_BOT_TOKEN"])

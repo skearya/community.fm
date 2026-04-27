@@ -60,7 +60,7 @@ class LikedSongs(commands.Cog):
             song.isrc: song
             for song in itertools.chain.from_iterable(self.songs.values())
         }
-        self.bot.state.liked_songs = list(unique_songs.values())
+        self.bot.state.liked = list(unique_songs.values())
 
     async def _extract_songs(self, message: Message) -> list[LikedSong] | None:
         """Find, fetch, and parse a CSV from a message."""

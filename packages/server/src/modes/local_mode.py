@@ -1,7 +1,7 @@
 import random
 from pathlib import Path
 
-from modes.radio_mode import RadioMode
+from modes.mode import RadioMode
 
 MUSIC_DIR = Path("/music")
 
@@ -61,7 +61,7 @@ class LocalSongs(RadioMode):
         self.songs: list[Path] = []
 
     async def next(self) -> str:
-        if len(self.songs) == 0:
+        if not self.songs:
             self.reload()
 
         song, *self.songs = self.songs
@@ -72,6 +72,6 @@ class LocalSongs(RadioMode):
         self.songs = [file for file in MUSIC_DIR.rglob("*") if file.suffix in AUDIO_EXT]
 
         if len(self.songs) == 0:
-            raise Exception("`/music` should contain audio files")
+            raise Exception("/music should contain audio files")
 
         random.shuffle(self.songs)
