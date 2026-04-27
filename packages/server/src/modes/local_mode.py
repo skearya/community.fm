@@ -4,56 +4,7 @@ from pathlib import Path
 from modes.mode import RadioMode
 
 MUSIC_DIR = Path("/music")
-
-# https://en.wikipedia.org/wiki/Audio_file_format
-AUDIO_EXT = {
-    ".3gp",
-    ".aa",
-    ".aac",
-    ".aax",
-    ".act",
-    ".aiff",
-    ".alac",
-    ".amr",
-    ".ape",
-    ".au",
-    ".awb",
-    ".dss",
-    ".dvf",
-    ".flac",
-    ".gsm",
-    ".iklax",
-    ".ivs",
-    ".m4a",
-    ".m4b",
-    ".m4p",
-    ".mmf",
-    ".movpkg",
-    ".mp1",
-    ".mp2",
-    ".mp3",
-    ".mpc",
-    ".msv",
-    ".nmf",
-    ".ogg",
-    ".oga",
-    ".mogg",
-    ".opus",
-    ".ra",
-    ".rm",
-    ".raw",
-    ".rf64",
-    ".sln",
-    ".tta",
-    ".voc",
-    ".vox",
-    ".wav",
-    ".wma",
-    ".wv",
-    ".webm",
-    ".8svx",
-    ".cda",
-}
+AUDIO_EXT = { ".3gp", ".aa", ".aac", ".aax", ".act", ".aiff", ".alac", ".amr", ".ape", ".au", ".awb", ".dss", ".dvf", ".flac", ".gsm", ".iklax", ".ivs", ".m4a", ".m4b", ".m4p", ".mmf", ".movpkg", ".mp1", ".mp2", ".mp3", ".mpc", ".msv", ".nmf", ".ogg", ".oga", ".mogg", ".opus", ".ra", ".rm", ".raw", ".rf64", ".sln", ".tta", ".voc", ".vox", ".wav", ".wma", ".wv", ".webm", ".8svx", ".cda" }  # fmt: skip
 
 
 class LocalSongs(RadioMode):
