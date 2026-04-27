@@ -2,7 +2,6 @@ import csv
 import itertools
 from io import StringIO
 
-import rich
 from bot import CustomBot
 from discord import Attachment, Message, utils
 from discord.ext import commands

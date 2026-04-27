@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from rapidfuzz import fuzz
 
 
-@dataclass
+@dataclass(frozen=True)
 class Request:
     url: str | None
     isrc: str | None
@@ -11,7 +11,7 @@ class Request:
     artist: str
 
 
-@dataclass
+@dataclass(frozen=True)
 class Download:
     source: str
     path: str

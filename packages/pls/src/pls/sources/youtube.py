@@ -55,7 +55,7 @@ class YoutubePls:
                         "YouTube", info["requested_downloads"][0]["filepath"]
                     )
             except Exception:
-                logger.debug("YouTube missing ISRC, checking next")
+                logger.debug("YouTube missing ISRC or failed to DL")
                 return None
 
         return await asyncio.to_thread(run)
