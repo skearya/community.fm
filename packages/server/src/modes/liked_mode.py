@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 from loguru import logger
 from models import NO_NEXT
 from modes.mode import RadioMode
-from pls import Request
 
 if TYPE_CHECKING:
     from state import State
@@ -20,11 +19,10 @@ class LikedSongsMode(RadioMode):
             return NO_NEXT
 
         song = random.choice(self.state.liked)
-        request = Request(None, song.isrc, song.name, song.artists)
 
-        if dl := await self.state.pls.give(request):
+        if dl := await self.state.pls.give(song):
             logger.info(f"Serving liked song: {dl.path}")
             return dl.path
         else:
-            logger.info(f"Failed to download liked song: {request}")
+            logger.info(f"Failed to download liked song: {song}")
             return NO_NEXT

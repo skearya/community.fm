@@ -1,6 +1,7 @@
 import asyncio
 from typing import TYPE_CHECKING
 
+import yt_dlp
 from pls.utils import Download
 from yt_dlp import YoutubeDL
 
@@ -28,17 +29,33 @@ class YoutubePls:
     async def logout(self):
         pass
 
+    async def url(self, logger: Logger, url: str) -> Download | None:
+        extractors = yt_dlp.extractor.gen_extractors()
+
+        for e in extractors:
+            if e.suitable(url) and e.IE_NAME != "generic":
+                return await self.resolve(logger, url)
+
+        logger.info("Failed to parse URL with YouTube")
+        return None
+
     async def isrc(self, logger: Logger, isrc: str) -> Download | None:
-        def run(isrc: str) -> Download | None:
-            with YoutubeDL(self.ydl_opts) as ydl:
-                info = ydl.extract_info(f"ytsearch1:{isrc}")
+        return await self.resolve(logger, f"ytsearch1:{isrc}")
 
-                if len(info["entries"]) == 0:
-                    logger.debug("YouTube missing song")
-                    return None
+    async def resolve(self, logger: Logger, query: str) -> Download | None:
+        def run() -> Download | None:
+            try:
+                with YoutubeDL(self.ydl_opts) as ydl:
+                    info = ydl.extract_info(query)
 
-                return Download(
-                    "YouTube", info["entries"][0]["requested_downloads"][0]["filepath"]
-                )
+                    if "entries" in info:
+                        info = info["entries"][0]
 
-        return await asyncio.to_thread(run, isrc)
+                    return Download(
+                        "YouTube", info["requested_downloads"][0]["filepath"]
+                    )
+            except Exception:
+                logger.debug("YouTube missing ISRC, checking next")
+                return None
+
+        return await asyncio.to_thread(run)

@@ -21,7 +21,10 @@ class Pls:
     async def give(self, track: Request) -> Download | None:
         tlogger = logger.bind(track=track)
 
-        if track.url and (dl := await self.streamrip.url(tlogger, track.url)):
+        if track.url and (
+            dl := await self.streamrip.url(tlogger, track.url)
+            or await self.youtube.url(tlogger, track.url)
+        ):
             return dl
 
         if track.isrc and (

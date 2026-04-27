@@ -58,7 +58,7 @@ class StreamripPls:
         parsed = parse_url(url)
 
         if parsed is None:
-            logger.debug("Failed to parse URL")
+            logger.debug("Failed to parse URL with Streamrip")
             return None
 
         client = self.clients[parsed.source]
@@ -116,7 +116,9 @@ class StreamripPls:
 
                     if score >= PERFECT_MATCH_THRESHOLD:
                         logger.debug(f"Perfect match on {source}")
-                        return await self.resolve(client, item.id)
+                        return await self.resolve(
+                            client, PendingSingle(item.id, client, self.config, self.db)
+                        )
 
                     similar.append(((score, -i), item, client))
             except Exception:

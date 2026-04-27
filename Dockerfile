@@ -5,6 +5,9 @@ FROM ghcr.io/astral-sh/uv:python3.14-trixie-slim
 RUN apt-get update && apt-get install -y git libtiff6 libopenjp2-7 ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
+# Get deno (needed for yt-dlp)
+COPY --from=denoland/deno:bin /deno /usr/local/bin/deno
+
 # Install the project into `/app`
 WORKDIR /app
 
