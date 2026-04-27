@@ -58,7 +58,6 @@ output.icecast(
   host="icecast",
   port=8000,
   password=environment.get("ICECAST_SOURCE_PASSWORD"),
-  send_icy_metadata=true,
   mount="stream.mp3",
   radio
 )
@@ -68,15 +67,19 @@ output.icecast(
   host="icecast",
   port=8000,
   password=environment.get("ICECAST_SOURCE_PASSWORD"),
-  send_icy_metadata=true,
   mount="stream.ogg",
   radio
 )
 
-# HTTP server for healthchecking
-harbor.http.register.simple(
-  port=8000,
-  method="GET",
-  "/",
-  fun (_) -> http.response(content_type="text/html", data="o7")
-)
+def index(_) =
+  http.response(content_type="text/html", data="o7")
+end
+
+def metadata(_) =
+  http.response(
+    content_type="application/json", data=json.stringify(radio.last_metadata())
+  )
+end
+
+harbor.http.register.simple(port=8000, method="GET", "/", index)
+harbor.http.register.simple(port=8000, method="GET", "/metadata", metadata)

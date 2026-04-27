@@ -22,7 +22,7 @@ class LikedSongsMode(RadioMode):
 
         if dl := await self.state.pls.give(song):
             logger.info(f"Serving liked song: {dl.path}")
-            return dl.path
+            return f'annotate:user="skeary":{dl.path}'
         else:
             logger.info(f"Failed to download liked song: {song}")
             return NO_NEXT
