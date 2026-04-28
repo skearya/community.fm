@@ -20,17 +20,12 @@ class LikedSongs(commands.Cog):
         """Get each user's most recently uploaded songs."""
         logger.info("Getting liked songs...")
         for guild in self.bot.guilds:
-            channel = utils.get(guild.text_channels, name=LIKED_SONGS_CHANNEL)
-            if channel is None:
-                continue
-
-            async for message in channel.history(oldest_first=False):
-                if message.author.id in self.bot.state.liked:
-                    continue
-                songs = await self._extract_songs(message)
-                if songs is None:
-                    continue
-                self._update_songs(message.author.id, songs)
+            if channel := utils.get(guild.text_channels, name=LIKED_SONGS_CHANNEL):
+                async for message in channel.history(oldest_first=False):
+                    if message.author.id in self.bot.state.liked:
+                        continue
+                    if songs := await self._extract_songs(message):
+                        self._update_songs(message.author.id, songs)
         logger.info(f"Got liked songs for {len(self.bot.state.liked)} user(s).")
 
     @commands.Cog.listener()
@@ -41,29 +36,27 @@ class LikedSongs(commands.Cog):
             return
 
         if self._find_csv(message) is None:
-            return
+            return  # don't reply to messages without csvs
 
-        songs = await self._extract_songs(message)
-        if songs is None:
+        if songs := await self._extract_songs(message):
+            self._update_songs(author.id, songs)
+            await message.reply(f"Updated {len(songs)} liked songs.")
+            logger.info(f"Updated {len(songs)} liked song(s) for: {author.name}")
+        else:
             await message.reply(
                 "Invalid CSV. Please use https://exportify.app/ or https://export-youtube-playlist.vercel.app/"
             )
-            return
-
-        self._update_songs(author.id, songs)
-        await message.reply(f"Updated {len(songs)} liked songs.")
-        logger.info(f"Updated {len(songs)} liked song(s) for: {author.name}")
 
     def _update_songs(self, user_id: int, songs: list[Request]) -> None:
         self.bot.state.liked[user_id] = songs
 
     async def _extract_songs(self, message: Message) -> list[Request] | None:
         """Find, fetch, and parse a CSV from a message."""
-        attachment = self._find_csv(message)
-        if attachment is None:
+        if attachment := self._find_csv(message):
+            csv_text = await self._fetch_csv(attachment)
+            return self._parse_csv(csv_text)
+        else:
             return None
-        csv_text = await self._fetch_csv(attachment)
-        return self._parse_csv(csv_text)
 
     def _find_csv(self, message: Message) -> Attachment | None:
         return next(
@@ -81,32 +74,34 @@ class LikedSongs(commands.Cog):
             return await response.text()
 
     def _parse_csv(self, csv_text: str) -> list[Request] | None:
-        reader = csv.DictReader(StringIO(csv_text))
+        try:
+            reader = csv.DictReader(StringIO(csv_text))
+            if reader.fieldnames is None:
+                return None
 
-        if reader.fieldnames is None:
+            if all(
+                attr in reader.fieldnames
+                for attr in ["Track Name", "Artist Name(s)", "ISRC"]
+            ):
+                return [
+                    Request(None, row["ISRC"], row["Track Name"], row["Artist Name(s)"])
+                    for row in reader
+                ]
+
+            def yt(row: dict[str, str]):
+                title = row["Title"].split(" - ")[:2]
+
+                if len(title) == 1:
+                    title.append("?")
+
+                return Request(row["Video url"], None, *title)
+
+            if all(attr in reader.fieldnames for attr in ["Title", "Video url"]):
+                return [yt(row) for row in reader]
+
             return None
-
-        if all(
-            attr in reader.fieldnames
-            for attr in ["Track Name", "Artist Name(s)", "ISRC"]
-        ):
-            return [
-                Request(None, row["ISRC"], row["Track Name"], row["Artist Name(s)"])
-                for row in reader
-            ]
-
-        def yt(row: dict[str, str]):
-            title = row["Title"].split(" - ")[:2]
-
-            if len(title) == 1:
-                title.append("?")
-
-            return Request(row["Video url"], None, *title)
-
-        if all(attr in reader.fieldnames for attr in ["Title", "Video url"]):
-            return [yt(row) for row in reader]
-
-        return None
+        except Exception:
+            return None
 
 
 async def setup(bot: CustomBot):
