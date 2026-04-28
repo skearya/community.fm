@@ -1,7 +1,7 @@
 import csv
 from io import StringIO
-
 from bot import CustomBot
+from models import LikedSongEntry
 from discord import Attachment, Message, utils
 from discord.ext import commands
 from loguru import logger
@@ -22,10 +22,11 @@ class LikedSongs(commands.Cog):
         for guild in self.bot.guilds:
             if channel := utils.get(guild.text_channels, name=LIKED_SONGS_CHANNEL):
                 async for message in channel.history(oldest_first=False):
-                    if message.author.id in self.bot.state.liked:
+                    author = message.author
+                    if author.id in self.bot.state.liked:
                         continue
                     if songs := await self._extract_songs(message):
-                        self._update_songs(message.author.id, songs)
+                        self._update_songs(author.id, author.name, songs)
         logger.info(f"Got liked songs for {len(self.bot.state.liked)} user(s).")
 
     @commands.Cog.listener()
@@ -39,7 +40,7 @@ class LikedSongs(commands.Cog):
             return  # don't reply to messages without csvs
 
         if songs := await self._extract_songs(message):
-            self._update_songs(author.id, songs)
+            self._update_songs(author.id, author.name, songs)
             await message.reply(f"Updated {len(songs)} liked songs.")
             logger.info(f"Updated {len(songs)} liked song(s) for: {author.name}")
         else:
@@ -47,8 +48,8 @@ class LikedSongs(commands.Cog):
                 "Invalid CSV. Please use https://exportify.app/ or https://export-youtube-playlist.vercel.app/"
             )
 
-    def _update_songs(self, user_id: int, songs: list[Request]) -> None:
-        self.bot.state.liked[user_id] = songs
+    def _update_songs(self, user_id: int, username: str, songs: list[Request]) -> None:
+        self.bot.state.liked[user_id] = LikedSongEntry(username, songs)
 
     async def _extract_songs(self, message: Message) -> list[Request] | None:
         """Find, fetch, and parse a CSV from a message."""
