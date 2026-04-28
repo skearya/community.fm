@@ -18,11 +18,12 @@ class LikedSongsMode(RadioMode):
             logger.info("No liked songs have been loaded.")
             return NO_NEXT
 
-        song = random.choice(self.state.liked)
+        user_id = random.choice(list(self.state.liked.keys()))
+        song = random.choice(self.state.liked[user_id])
 
         if dl := await self.state.pls.give(song):
             logger.info(f"Serving liked song: {dl.path}")
-            return f'annotate:user="skeary":{dl.path}'
+            return f'annotate:user="{user_id}":{dl.path}'
         else:
             logger.info(f"Failed to download liked song: {song}")
             return NO_NEXT

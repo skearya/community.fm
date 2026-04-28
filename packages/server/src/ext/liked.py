@@ -1,5 +1,4 @@
 import csv
-import itertools
 from io import StringIO
 
 from bot import CustomBot
@@ -15,7 +14,6 @@ CSV_CONTENT_TYPE = "text/csv"
 class LikedSongs(commands.Cog):
     def __init__(self, bot: CustomBot):
         self.bot = bot
-        self.songs: dict[int, list[Request]] = {}
 
     @commands.Cog.listener()
     async def on_ready(self) -> None:
@@ -27,13 +25,13 @@ class LikedSongs(commands.Cog):
                 continue
 
             async for message in channel.history(oldest_first=False):
-                if message.author.id in self.songs:
+                if message.author.id in self.bot.state.liked:
                     continue
                 songs = await self._extract_songs(message)
                 if songs is None:
                     continue
                 self._update_songs(message.author.id, songs)
-        logger.info(f"Got liked songs for {len(self.songs)} user(s).")
+        logger.info(f"Got liked songs for {len(self.bot.state.liked)} user(s).")
 
     @commands.Cog.listener()
     async def on_message(self, message: Message) -> None:
@@ -57,8 +55,7 @@ class LikedSongs(commands.Cog):
         logger.info(f"Updated {len(songs)} liked song(s) for: {author.name}")
 
     def _update_songs(self, user_id: int, songs: list[Request]) -> None:
-        self.songs[user_id] = songs
-        self.bot.state.liked = list(itertools.chain.from_iterable(self.songs.values()))
+        self.bot.state.liked[user_id] = songs
 
     async def _extract_songs(self, message: Message) -> list[Request] | None:
         """Find, fetch, and parse a CSV from a message."""

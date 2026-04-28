@@ -9,7 +9,7 @@ MUSIC_DIRECTORY = "/music"
 class State:
     def __init__(self):
         self.mode: RadioMode = LikedSongsMode(self)
-        self.liked: list[Request] = []
+        self.liked: dict[int, list[Request]] = {}
         self.pls = Pls(DATABASE_FILEPATH, MUSIC_DIRECTORY)
 
     async def __aenter__(self) -> State:
