@@ -12,8 +12,8 @@ services:
             - DISCORD_TEST_GUILD
             - RADIO_STREAM_URL
         volumes:
-            - ${MUSIC_DIRECTORY}:/music
             - ${STREAMRIP_CONFIG_PATH}:/root/.config/streamrip/config.toml
+            - ${MUSIC_DIRECTORY}:/music
     icecast:
         image: ghcr.io/libretime/icecast:2.4.4
         container_name: icecast
@@ -38,7 +38,7 @@ services:
         entrypoint: ["liquidsoap", "/etc/liquidsoap/script.liq"]
         restart: unless-stopped
         ports:
-            - 8001:8001
+            - 8001-8002:8001-8002
         environment:
             - ICECAST_SOURCE_PASSWORD
             - LIVE_SOURCE_PASSWORD

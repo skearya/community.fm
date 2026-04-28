@@ -71,15 +71,33 @@ output.icecast(
   radio
 )
 
-def index(_) =
-  http.response(content_type="text/html", data="o7")
-end
+# Healthchecking
+harbor.http.register.simple(
+  port=8002,
+  method="GET",
+  "/",
+  fun (_) -> http.response(content_type="text/html", data="o7")
+)
 
-def metadata(_) =
-  http.response(
-    content_type="application/json", data=json.stringify(radio.last_metadata())
-  )
-end
+# Store current song/stream metadata
+last_metadata = ref([])
+radio.on_metadata(synchronous=true, fun (m) -> last_metadata := m)
 
-harbor.http.register.simple(port=8000, method="GET", "/", index)
-harbor.http.register.simple(port=8000, method="GET", "/metadata", metadata)
+headers = [("Access-Control-Allow-Origin", "*")]
+
+# Serve current song/stream metadata
+harbor.http.register.simple(
+  port=8002,
+  method="GET",
+  "/metadata",
+  fun (_) ->
+    begin
+      data = last_metadata()
+
+      http.response(
+        headers=headers,
+        content_type="application/json",
+        data=metadata.json.stringify(data)
+      )
+    end
+)
