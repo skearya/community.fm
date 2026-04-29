@@ -1,3 +1,6 @@
+import base64
+import re
+from io import BytesIO
 from os import environ
 
 import discord
@@ -47,6 +50,45 @@ class Stream(commands.Cog):
 
         await interaction.guild.voice_client.disconnect(force=True)
         await interaction.response.send_message("Left.")
+
+    @app_commands.command(
+        name="now-playing", description="Get the currently playing song on the radio."
+    )
+    @app_commands.guild_only()
+    async def now_playing(self, interaction: Interaction):
+        metadata = self.bot.state.metadata
+
+        if metadata is None:
+            await interaction.response.send_message(
+                "The radio is currently initializing, or something is going very wrong."
+            )
+            return
+
+        embed = discord.Embed(
+            title=f"{metadata.get('artist', 'Unknown Artist')} - {metadata.get('title', 'Unknown Title')}"
+        )
+
+        for k, v in metadata.items():
+            if k == "cover" or len(v) > 1024:
+                continue
+
+            embed.add_field(name=k, value=v)
+
+        if cover := metadata.get("cover"):
+            match cover.split(","):
+                case [header, data] if match := re.search(
+                    "data:image/(.*);base64", header
+                ):
+                    extension = match.group(1)
+                    decoded = base64.b64decode(data)
+
+                    filename = f"cover.{extension}"
+                    file = discord.File(fp=BytesIO(decoded), filename=filename)
+                    embed.set_thumbnail(url=f"attachment://{filename}")
+
+                    await interaction.response.send_message(file=file, embed=embed)
+
+        await interaction.response.send_message(embed=embed)
 
 
 async def setup(bot: CustomBot):
