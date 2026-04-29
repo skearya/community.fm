@@ -91,6 +91,18 @@ wheels = [
 ]
 
 [[package]]
+name = "aiohttp-sse"
+version = "2.2.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "aiohttp" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/80/df/4ddb30e689695fd91cf41c072e154061120ed166e8baf6c9a0020f27dffc/aiohttp-sse-2.2.0.tar.gz", hash = "sha256:a48dd5774031d3f41a29e159ebdbb93e89c8f37c1e9e83e196296be51885a5c2", size = 9432, upload-time = "2024-02-29T18:43:48.118Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/5a/b8/bf448b1d2dbe6cf16c3be0b92230a8f032f2f0ed159a2299284c709819c8/aiohttp_sse-2.2.0-py3-none-any.whl", hash = "sha256:339f9803bcf4682a2060e75548760d86abe4424a0d92ba66ff4985de3bd743dc", size = 6740, upload-time = "2024-02-29T18:43:46.423Z" },
+]
+
+[[package]]
 name = "aiolimiter"
 version = "1.2.1"
 source = { registry = "https://pypi.org/simple" }
@@ -802,6 +814,7 @@ version = "0.1.0"
 source = { virtual = "packages/server" }
 dependencies = [
     { name = "aiohttp" },
+    { name = "aiohttp-sse" },
     { name = "discord-py", extra = ["voice"] },
     { name = "loguru" },
     { name = "pls" },
@@ -810,6 +823,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "aiohttp", specifier = ">=3.13.5" },
+    { name = "aiohttp-sse", specifier = ">=2.2.0" },
     { name = "discord-py", extras = ["voice"], specifier = ">=2.7.1" },
     { name = "loguru", specifier = ">=0.7.3" },
     { name = "pls", editable = "packages/pls" },

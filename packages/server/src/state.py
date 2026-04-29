@@ -1,9 +1,8 @@
-from typing import Optional, Any
 from asyncio import Queue
-import asyncio
+
+from models import LikedSongEntry
 from modes.liked_mode import LikedSongsMode
 from modes.mode import RadioMode
-from models import LikedSongEntry
 from pls import Pls
 
 DATABASE_FILEPATH = "/music/pls.db"
@@ -15,8 +14,8 @@ class State:
         self.mode: RadioMode = LikedSongsMode(self)
         self.pls = Pls(DATABASE_FILEPATH, MUSIC_DIRECTORY)
 
-        self.metadata: Optional[dict] = None
-        self.metadata_updates: Queue[dict[str, str]] = asyncio.Queue()
+        self.metadata: dict[str, str] | None = None
+        self.metadata_listeners: set[Queue[dict[str, str]]] = set()
 
         self.liked: dict[int, LikedSongEntry] = {}
 

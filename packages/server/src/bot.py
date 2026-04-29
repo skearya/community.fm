@@ -26,9 +26,7 @@ class CustomBot(commands.Bot):
     async def setup_hook(self):
         await self.load_extension("ext.stream")
         await self.load_extension("ext.liked")
-
-        self.tree.copy_global_to(guild=TEST_GUILD)
-        await self.tree.sync(guild=TEST_GUILD)
+        await self.load_extension("ext.sync")
 
     async def on_ready(self):
         logger.info(f"Logged in as {self.user}")

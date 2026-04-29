@@ -112,23 +112,18 @@
 			const statusEl = document.querySelector("#status");
 			const coverEl = document.querySelector("#cover");
 
-			setInterval(() => update(), 5000);
-			update();
+			const eventSource = new EventSource("/metadata");
 
-			async function update() {
-				const metadata = await (
-					await fetch("http://localhost:8002/metadata")
-				).json();
-
-				const status = await (
-					await fetch("http://localhost:8000/status-json.xsl")
-				).json();
-
-				const data = { ...metadata, ...status };
+			eventSource.addEventListener("message", (event) => {
+				const data = JSON.parse(event.data);
 
 				metadataEl.textContent = JSON.stringify(data, null, 2);
-				coverEl.src = metadata["cover"];
-			}
+				coverEl.src = data["cover"];
+			});
+
+			eventSource.onerror = (err) => {
+				console.error("Connection failed:", err);
+			};
 		</script>
 	</body>
 </html>

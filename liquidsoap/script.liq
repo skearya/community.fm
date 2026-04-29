@@ -1,7 +1,7 @@
 #!/usr/bin/liquidsoap
 
-default_settings = settings.encoder.metadata.export()
-settings.encoder.metadata.export := [...default_settings, "user"]
+settings.encoder.metadata.export :=
+  [...settings.encoder.metadata.export(), "user"]
 
 log.file.path := "/tmp/radio.log"
 log.stdout := true
@@ -50,7 +50,7 @@ end
 radio =
   fallback(
     track_sensitive=false,
-    transition_length=15.0,
+    transition_length=5.0,
     transitions=[to_live, to_radio],
     [live, radio, oops]
   )
@@ -84,37 +84,19 @@ harbor.http.register.simple(
 
 # Store current song/stream metadata
 last_metadata = ref([])
+
 radio.on_metadata(
   synchronous=false,
   fun (m) ->
     begin
       last_metadata := m
 
-      headers = [("Content-Type", "application/json")]
       ignore(
         http.post(
-          headers=headers,
+          headers=[("Content-Type", "application/json")],
           data=metadata.json.stringify(m),
           "http://server:8080/metadata"
         )
-      )
-    end
-)
-
-# Serve current song/stream metadata
-harbor.http.register.simple(
-  port=8002,
-  method="GET",
-  "/metadata",
-  fun (_) ->
-    begin
-      data = last_metadata()
-
-      headers = [("Access-Control-Allow-Origin", "*")]
-      http.response(
-        headers=headers,
-        content_type="application/json",
-        data=metadata.json.stringify(data)
       )
     end
 )
