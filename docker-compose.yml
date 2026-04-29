@@ -5,6 +5,7 @@ services:
             dockerfile: Dockerfile
         container_name: server
         restart: unless-stopped
+        stop_grace_period: 1s
         ports:
             - 8080:8080
         environment:
