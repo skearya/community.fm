@@ -1,26 +1,47 @@
+import secrets
+from aiohttp.typedefs import Handler
 import asyncio
 import json
-
 from aiohttp import ClientConnectionResetError, web
 from aiohttp_sse import sse_response
 from loguru import logger
 from state import State
+from os import environ
+
 
 routes = web.RouteTableDef()
 STATE_KEY = web.AppKey("STATE_KEY", State)
 
+LIQUIDSOAP_TOKEN = environ["LIQUIDSOAP_TOKEN"]
+LIQUIDSOAP_ONLY_ROUTES = set()
 
-# TODO: Make sure ONLY liquidsoap can get to this (listen on non-exposed port?)
+
+def liquidsoap_only(handler: Handler):
+    """Only liquidsoap may call this route using the secret."""
+    LIQUIDSOAP_ONLY_ROUTES.add(handler)
+    return handler
+
+
+@web.middleware
+async def liquidsoap_only_auth(request: web.Request, handler: Handler):
+    if handler in LIQUIDSOAP_ONLY_ROUTES:
+        token = request.headers.get("X-Liquidsoap-Token", "")
+        if not secrets.compare_digest(token, LIQUIDSOAP_TOKEN):
+            raise web.HTTPForbidden(reason="Liquidsoap-only route; token required.")
+    return await handler(request)
+
+
 @routes.get("/next")
-async def handle_next(request: web.Request) -> web.Response:
+@liquidsoap_only
+async def next(request: web.Request) -> web.Response:
     state = request.app[STATE_KEY]
 
     return web.Response(text=await state.mode.next())
 
 
-# TODO: Make sure ONLY liquidsoap can post to this (listen on non-exposed port?)
 @routes.post("/metadata")
-async def handle_update_metadata(request: web.Request) -> web.Response:
+@liquidsoap_only
+async def update_metadata(request: web.Request) -> web.Response:
     state = request.app[STATE_KEY]
     state.metadata = await request.json()
 
@@ -32,7 +53,7 @@ async def handle_update_metadata(request: web.Request) -> web.Response:
 
 
 @routes.get("/metadata")
-async def handle_get_metadata(request: web.Request) -> web.StreamResponse:
+async def get_metadata(request: web.Request) -> web.StreamResponse:
     state = request.app[STATE_KEY]
     queue = asyncio.Queue()
 
@@ -57,7 +78,7 @@ async def handle_get_metadata(request: web.Request) -> web.StreamResponse:
 
 
 async def start(state: State):
-    app = web.Application()
+    app = web.Application(middlewares=[liquidsoap_only_auth])
     app[STATE_KEY] = state
 
     app.add_routes(routes)
