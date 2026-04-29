@@ -1,25 +1,26 @@
 import asyncio
 import json
+from collections.abc import Iterable
 
 from aiohttp import ClientConnectionResetError, web
 from aiohttp_sse import sse_response
 from loguru import logger
 from state import State
 
-routes = web.RouteTableDef()
 STATE_KEY = web.AppKey("STATE_KEY", State)
 
+public = web.RouteTableDef()
+internal = web.RouteTableDef()
 
-# TODO: Make sure ONLY liquidsoap can get to this (listen on non-exposed port?)
-@routes.get("/next")
+
+@internal.get("/next")
 async def handle_next(request: web.Request) -> web.Response:
     state = request.app[STATE_KEY]
 
     return web.Response(text=await state.mode.next())
 
 
-# TODO: Make sure ONLY liquidsoap can post to this (listen on non-exposed port?)
-@routes.post("/metadata")
+@internal.post("/metadata")
 async def handle_update_metadata(request: web.Request) -> web.Response:
     state = request.app[STATE_KEY]
     state.metadata = await request.json()
@@ -31,7 +32,7 @@ async def handle_update_metadata(request: web.Request) -> web.Response:
     return web.Response(status=200)
 
 
-@routes.get("/metadata")
+@public.get("/metadata")
 async def handle_get_metadata(request: web.Request) -> web.StreamResponse:
     state = request.app[STATE_KEY]
     queue = asyncio.Queue()
@@ -56,19 +57,36 @@ async def handle_get_metadata(request: web.Request) -> web.StreamResponse:
     return resp
 
 
-async def start(state: State):
+@public.get("/")
+async def handle_index(_request: web.Request) -> web.FileResponse:
+    return web.FileResponse("/static/index.html")
+
+
+async def spawn(
+    state: State, routes: Iterable[web.AbstractRouteDef], label: str, port: int
+):
     app = web.Application()
     app[STATE_KEY] = state
 
     app.add_routes(routes)
-    app.add_routes([web.static("/", "/static")])
 
     runner = web.AppRunner(app)
     await runner.setup()
 
-    site = web.TCPSite(runner, host="0.0.0.0", port=8080)
+    site = web.TCPSite(runner, host="0.0.0.0", port=port)
     await site.start()
 
-    logger.info(f"HTTP server started at {site.name}")
+    logger.info(f"{label} HTTP server started at {site.name}")
+
+
+async def start(state: State):
+    await spawn(
+        state,
+        [web.get("/", handle_index), web.static("/", "/static"), *public],
+        "Public",
+        8080,
+    )
+
+    await spawn(state, internal, "Internal", 8081)
 
     await asyncio.Event().wait()

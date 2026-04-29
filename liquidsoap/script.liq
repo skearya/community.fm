@@ -1,5 +1,7 @@
 #!/usr/bin/liquidsoap
 
+BASE_URL = "http://server:8081"
+
 settings.encoder.metadata.export :=
   [...settings.encoder.metadata.export(), "user"]
 
@@ -12,7 +14,7 @@ radio_intro = single("/etc/liquidsoap/assets/radio-intro.mp3")
 stream_intro = single("/etc/liquidsoap/assets/stream-intro.mp3")
 
 def next() =
-  uri = http.get("http://server:8080/next")
+  uri = http.get("#{BASE_URL}/next")
 
   if uri != "NO_NEXT" then request.create(uri) else null end
 end
@@ -95,7 +97,7 @@ radio.on_metadata(
         http.post(
           headers=[("Content-Type", "application/json")],
           data=metadata.json.stringify(m),
-          "http://server:8080/metadata"
+          "#{BASE_URL}/metadata"
         )
       )
     end
