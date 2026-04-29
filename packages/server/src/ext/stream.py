@@ -83,10 +83,11 @@ class Stream(commands.Cog):
                     decoded = base64.b64decode(data)
 
                     filename = f"cover.{extension}"
-                    file = discord.File(fp=BytesIO(decoded), filename=filename)
+                    file = discord.File(BytesIO(decoded), filename)
                     embed.set_thumbnail(url=f"attachment://{filename}")
 
                     await interaction.response.send_message(file=file, embed=embed)
+                    return
 
         await interaction.response.send_message(embed=embed)
 
