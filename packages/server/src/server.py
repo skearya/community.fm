@@ -9,10 +9,28 @@ STATE_KEY = web.AppKey("STATE_KEY", State)
 
 
 @routes.get("/next")
-async def handle(request: web.Request) -> web.Response:
+async def handle_next(request: web.Request) -> web.Response:
     state = request.app[STATE_KEY]
 
     return web.Response(text=await state.mode.next())
+
+
+@routes.post("/metadata")
+async def handle_update_metadata(request: web.Request) -> web.Response:
+    state = request.app[STATE_KEY]
+
+    metadata = await request.json()
+    await state.metadata_updates.put(metadata)
+    state.metadata = metadata
+
+    logger.info(f"Received metadata update: {metadata['title']}")
+    return web.Response(status=200)
+
+
+@routes.get("/metadata")
+async def handle_get_metadata(request: web.Request) -> web.Response:
+    state = request.app[STATE_KEY]
+    return web.json_response(data=state.metadata)
 
 
 async def start(state: State):
