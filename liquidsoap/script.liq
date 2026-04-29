@@ -6,16 +6,13 @@ settings.encoder.metadata.export :=
 log.file.path := "/tmp/radio.log"
 log.stdout := true
 
-auth_headers = [("X-Liquidsoap-Token", environment.get("LIQUIDSOAP_TOKEN"))]
-post_headers = [...auth_headers, ("Content-Type", "application/json")]
-
 # Assets
 oops = single("/etc/liquidsoap/assets/oops.mp3")
 radio_intro = single("/etc/liquidsoap/assets/radio-intro.mp3")
 stream_intro = single("/etc/liquidsoap/assets/stream-intro.mp3")
 
 def next() =
-  uri = http.get("http://server:8080/next", headers=auth_headers)
+  uri = http.get("http://server:8080/next")
 
   if uri != "NO_NEXT" then request.create(uri) else null end
 end
@@ -96,7 +93,7 @@ radio.on_metadata(
 
       ignore(
         http.post(
-          headers=post_headers,
+          headers=[("Content-Type", "application/json")],
           data=metadata.json.stringify(m),
           "http://server:8080/metadata"
         )

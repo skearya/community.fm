@@ -11,7 +11,6 @@ services:
             - DISCORD_BOT_TOKEN
             - DISCORD_TEST_GUILD
             - RADIO_STREAM_URL
-            - LIQUIDSOAP_TOKEN
         volumes:
             - ./web:/static
             - ${MUSIC_DIRECTORY}:/music
@@ -37,14 +36,13 @@ services:
     liquidsoap:
         image: savonet/liquidsoap:v2.4.4
         container_name: liquidsoap
-        entrypoint: [ "liquidsoap", "/etc/liquidsoap/script.liq" ]
+        entrypoint: ["liquidsoap", "/etc/liquidsoap/script.liq"]
         restart: unless-stopped
         ports:
             - 8001-8002:8001-8002
         environment:
             - ICECAST_SOURCE_PASSWORD
             - LIVE_SOURCE_PASSWORD
-            - LIQUIDSOAP_TOKEN
         volumes:
             - ./liquidsoap:/etc/liquidsoap:ro
             - ${MUSIC_DIRECTORY}:/music:ro

@@ -1,10 +1,11 @@
+from os import environ
+
 import aiohttp
 import discord
 from discord import Intents
 from discord.ext import commands
 from loguru import logger
 from state import State
-from os import environ
 
 TEST_GUILD = discord.Object(id=environ["DISCORD_TEST_GUILD"])
 
