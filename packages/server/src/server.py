@@ -1,10 +1,12 @@
 import asyncio
 import json
 from collections.abc import Iterable
+from dataclasses import asdict
 
 from aiohttp import ClientConnectionResetError, web
 from aiohttp_sse import sse_response
 from loguru import logger
+from models import LiquidsoapMetadata
 from state import State
 
 STATE_KEY = web.AppKey("STATE_KEY", State)
@@ -23,12 +25,12 @@ async def handle_next(request: web.Request) -> web.Response:
 @internal.post("/metadata")
 async def handle_update_metadata(request: web.Request) -> web.Response:
     state = request.app[STATE_KEY]
-    state.metadata = await request.json()
+    state.metadata = LiquidsoapMetadata(**await request.json())
 
     for queue in state.metadata_listeners:
         await queue.put(state.metadata)
 
-    logger.info(f"Received metadata update: {state.metadata['title']}")
+    logger.info(f"Received metadata update: {state.metadata.title}")
     return web.Response(status=200)
 
 
@@ -42,11 +44,11 @@ async def handle_get_metadata(request: web.Request) -> web.StreamResponse:
     try:
         async with sse_response(request) as resp:
             if metadata := state.metadata:
-                await resp.send(json.dumps(metadata))
+                await resp.send(json.dumps(asdict(metadata)))
 
             while True:
                 metadata = await queue.get()
-                await resp.send(json.dumps(metadata))
+                await resp.send(json.dumps(asdict(metadata)))
     except ClientConnectionResetError:
         pass
     except Exception:

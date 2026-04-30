@@ -1,6 +1,6 @@
 from asyncio import Queue
 
-from models import LikedSongEntry
+from models import LikedSongEntry, LiquidsoapMetadata
 from modes.liked_mode import LikedSongsMode
 from modes.mode import RadioMode
 from pls import Pls
@@ -14,8 +14,8 @@ class State:
         self.mode: RadioMode = LikedSongsMode(self)
         self.pls = Pls(DATABASE_FILEPATH, MUSIC_DIRECTORY)
 
-        self.metadata: dict[str, str] | None = None
-        self.metadata_listeners: set[Queue[dict[str, str]]] = set()
+        self.metadata: LiquidsoapMetadata | None = None
+        self.metadata_listeners: set[Queue[LiquidsoapMetadata]] = set()
 
         self.liked: dict[int, LikedSongEntry] = {}
 

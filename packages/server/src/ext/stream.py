@@ -1,3 +1,4 @@
+from dataclasses import fields
 import base64
 import re
 from io import BytesIO
@@ -65,16 +66,18 @@ class Stream(commands.Cog):
             return
 
         embed = discord.Embed(
-            title=f"{metadata.get('artist', 'Unknown Artist')} - {metadata.get('title', 'Unknown Title')}"
+            title=f"{metadata.artist or 'Unknown Artist'} - {metadata.title or 'Unknown Title'}"
         )
 
-        for k, v in metadata.items():
-            if k == "cover" or len(v) > 1024:
+        for key in fields(metadata):
+            value = getattr(metadata, key.name)
+
+            if value is None or len(value) > 1024 or key.name == "cover":
                 continue
 
-            embed.add_field(name=k, value=v)
+            embed.add_field(name=key.name, value=value)
 
-        if cover := metadata.get("cover"):
+        if cover := metadata.cover:
             match cover.split(","):
                 case [header, data] if match := re.search(
                     "data:image/(.*);base64", header
