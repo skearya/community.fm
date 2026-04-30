@@ -70,7 +70,7 @@ class LikedSongs(commands.Cog):
         )
 
     async def _fetch_csv(self, attachment: Attachment) -> str:
-        async with self.bot.session.get(attachment.url) as response:
+        async with self.bot.state.session.get(attachment.url) as response:
             response.raise_for_status()
             return await response.text()
 

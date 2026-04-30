@@ -84,6 +84,19 @@ harbor.http.register.simple(
   fun (_) -> http.response(content_type="text/html", data="o7")
 )
 
+# Skip current song
+harbor.http.register.simple(
+  port=8002,
+  method="POST",
+  "/skip",
+  fun (_) ->
+    begin
+      radio.skip()
+
+      http.response(content_type="text/plain", data="Skipped")
+    end
+)
+
 # Store current song/stream metadata
 last_metadata = ref([])
 
