@@ -25,25 +25,21 @@ async def handle_next(request: web.Request) -> web.Response:
 @internal.post("/metadata")
 async def handle_update_metadata(request: web.Request) -> web.Response:
     state = request.app[STATE_KEY]
-    state.metadata = LiquidsoapMetadata(**await request.json())
 
-    for queue in state.metadata_listeners:
-        await queue.put(state.metadata)
+    metadata = LiquidsoapMetadata(**await request.json())
+    state.metadata.update(metadata)
 
-    logger.info(f"Received metadata update: {state.metadata.title}")
+    logger.info(f"Received metadata update: {metadata.title}")
     return web.Response(status=200)
 
 
 @public.get("/metadata")
 async def handle_get_metadata(request: web.Request) -> web.StreamResponse:
     state = request.app[STATE_KEY]
-    queue = asyncio.Queue()
-
-    state.metadata_listeners.add(queue)
 
     try:
-        async with sse_response(request) as resp:
-            if metadata := state.metadata:
+        async with sse_response(request) as resp, state.metadata.subscribe() as queue:
+            if metadata := state.metadata.value:
                 await resp.send(json.dumps(asdict(metadata)))
 
             while True:
@@ -53,8 +49,6 @@ async def handle_get_metadata(request: web.Request) -> web.StreamResponse:
         pass
     except Exception:
         logger.exception("Metadata SSE failed?")
-    finally:
-        state.metadata_listeners.remove(queue)
 
     return resp
 

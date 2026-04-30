@@ -1,6 +1,6 @@
-from dataclasses import fields
 import base64
 import re
+from dataclasses import fields
 from io import BytesIO
 from os import environ
 
@@ -57,7 +57,7 @@ class Stream(commands.Cog):
     )
     @app_commands.guild_only()
     async def now_playing(self, interaction: Interaction):
-        metadata = self.bot.state.metadata
+        metadata = self.bot.state.metadata.value
 
         if metadata is None:
             await interaction.response.send_message(
