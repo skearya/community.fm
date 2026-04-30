@@ -20,10 +20,10 @@ def next() =
 end
 
 # Build the feed from the server
-radio = request.dynamic(retry_delay=5.0, next)
+feed = request.dynamic(retry_delay=5.0, next)
 
 # Skip blanks longer than 3 seconds
-radio = blank.skip(max_blank=3.0, radio)
+radio = blank.skip(max_blank=3.0, feed)
 
 # Crossfade songs
 radio = crossfade(radio)
@@ -91,7 +91,7 @@ harbor.http.register.simple(
   "/skip",
   fun (_) ->
     begin
-      radio.skip()
+      feed.skip()
 
       http.response(content_type="text/plain", data="Skipped")
     end
