@@ -92,12 +92,16 @@
 
 			#cover {
 				position: fixed;
-				bottom: 0;
-				right: 0;
+				top: 0%;
+				right: 0%;
+				width: calc(248px);
+				height: calc(248px);
 			}
 		</style>
 	</head>
 	<body>
+		<div id="background"></div>
+
 		<main>
 			<audio
 				id="player"
@@ -107,6 +111,7 @@
 			<pre id="metadata"></pre>
 			<img id="cover" />
 		</main>
+
 		<script type="module">
 			const metadataEl = document.querySelector("#metadata");
 			const statusEl = document.querySelector("#status");
@@ -114,16 +119,20 @@
 
 			const eventSource = new EventSource("/metadata");
 
-			eventSource.addEventListener("message", (event) => {
-				const data = JSON.parse(event.data);
-
-				metadataEl.textContent = JSON.stringify(data, null, 2);
-				coverEl.src = data["cover"];
+			eventSource.addEventListener("open", (event) => {
+				console.log("Connected");
 			});
 
-			eventSource.onerror = (err) => {
-				console.error("Connection failed:", err);
-			};
+			eventSource.addEventListener("message", (event) => {
+				const { cover, ...data } = JSON.parse(event.data);
+
+				metadataEl.textContent = JSON.stringify(data, null, 2);
+				coverEl.src = cover;
+			});
+
+			eventSource.addEventListener("error", (event) => {
+				console.error("Connection failed:", event);
+			});
 		</script>
 	</body>
 </html>
