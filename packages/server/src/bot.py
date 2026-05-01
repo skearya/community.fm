@@ -1,4 +1,5 @@
 from os import environ
+from pathlib import Path
 
 import discord
 from discord import Intents
@@ -36,6 +37,9 @@ class CustomBot(commands.Bot):
 
 async def start(state: State):
     discord.utils.setup_logging()
+
+    if Path("/usr/lib/libopus.so").exists():
+        discord.opus.load_opus("/usr/lib/libopus.so")
 
     async with CustomBot(state) as bot:
         await bot.start(BOT_TOKEN)

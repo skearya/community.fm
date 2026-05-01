@@ -1,12 +1,8 @@
 # Use a Python image with uv pre-installed
-FROM ghcr.io/astral-sh/uv:python3.14-trixie-slim
+FROM ghcr.io/astral-sh/uv:python3.14-alpine AS builder
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y git ffmpeg python3-dev python3-setuptools libtiff6 libopenjp2-7 zlib1g-dev \
-    && rm -rf /var/lib/apt/lists/*
-
-# Get deno (needed for yt-dlp)
-COPY --from=denoland/deno:bin /deno /usr/local/bin/deno
+# Install git
+RUN apk add --no-cache git
 
 # Install the project into `/app`
 WORKDIR /app
@@ -19,6 +15,12 @@ ENV UV_LINK_MODE=copy
 
 # Omit development dependencies
 ENV UV_NO_DEV=1
+
+# Disable Python downloads, because we want to use the system interpreter
+# across both images. If using a managed Python version, it needs to be
+# copied from the build image into the final image; see `standalone.Dockerfile`
+# for an example.
+ENV UV_PYTHON_DOWNLOADS=0
 
 # Ensure installed tools can be executed out of the box
 ENV UV_TOOL_BIN_DIR=/usr/local/bin
@@ -35,11 +37,30 @@ COPY . /app
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --package=server
 
+# Then, use a final image without uv
+FROM python:3.14-alpine
+# It is important to use the image that matches the builder, as the path to the
+# Python executable must be the same, e.g., using `python:3.11-slim-bookworm`
+# will fail.
+
+# Install ffmpeg & deno (needed for yt-dlp), opus (needed for bot streaming)
+RUN apk add --no-cache deno ffmpeg opus-dev
+
+# Setup a non-root user
+RUN addgroup -g 1000 -S nonroot \
+    && adduser -u 1000 -G nonroot -S -D nonroot
+
+# Copy the application from the builder
+COPY --from=builder --chown=nonroot:nonroot /app /app
+
 # Place executables in the environment at the front of the path
 ENV PATH="/app/.venv/bin:$PATH"
 
-# Reset the entrypoint, don't invoke `uv`
-ENTRYPOINT []
+# Use the non-root user to run our application
+USER nonroot
+
+# Use `/app` as the working directory
+WORKDIR /app
 
 # Run the server
-CMD ["python", "/app/packages/server/src/main.py"]
+CMD ["python", "packages/server/src/main.py"]

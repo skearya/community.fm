@@ -19,5 +19,8 @@ logs
 # Secrets
 .env
 
+# Git
+.git
+
 # Other
 .DS_Store
