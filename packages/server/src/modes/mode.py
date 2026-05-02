@@ -6,3 +6,13 @@ class RadioMode(ABC):
     async def next(self) -> str:
         """Returns the URI of the next song."""
         pass
+
+    @abstractmethod
+    async def setup(self) -> None:
+        """Sets up the mode on server startup."""
+        pass
+
+    @abstractmethod
+    def __str__(self) -> str:
+        """Returns a label for the mode."""
+        pass

@@ -7,7 +7,7 @@ MUSIC_DIR = Path("/music")
 AUDIO_EXT = { ".3gp", ".aa", ".aac", ".aax", ".act", ".aiff", ".alac", ".amr", ".ape", ".au", ".awb", ".dss", ".dvf", ".flac", ".gsm", ".iklax", ".ivs", ".m4a", ".m4b", ".m4p", ".mmf", ".movpkg", ".mp1", ".mp2", ".mp3", ".mpc", ".msv", ".nmf", ".ogg", ".oga", ".mogg", ".opus", ".ra", ".rm", ".raw", ".rf64", ".sln", ".tta", ".voc", ".vox", ".wav", ".wma", ".wv", ".webm", ".8svx", ".cda" }  # fmt: skip
 
 
-class LocalSongs(RadioMode):
+class LocalSongsMode(RadioMode):
     def __init__(self):
         self.songs: list[Path] = []
 
@@ -26,3 +26,9 @@ class LocalSongs(RadioMode):
             raise Exception("/music should contain audio files")
 
         random.shuffle(self.songs)
+
+    async def setup(self) -> None:
+        return
+
+    def __str__(self) -> str:
+        return "Local Songs"

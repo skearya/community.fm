@@ -1,6 +1,5 @@
 import random
 from typing import TYPE_CHECKING
-
 from loguru import logger
 from models import NO_NEXT
 from modes.mode import RadioMode
@@ -28,3 +27,9 @@ class LikedSongsMode(RadioMode):
         else:
             logger.info(f"Failed to download liked song: {song}")
             return NO_NEXT
+
+    async def setup(self) -> None:
+        return
+
+    def __str__(self) -> str:
+        return "Liked Songs"
