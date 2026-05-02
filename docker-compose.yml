@@ -38,7 +38,7 @@ services:
     liquidsoap:
         image: savonet/liquidsoap:v2.4.4
         container_name: liquidsoap
-        entrypoint: [ "liquidsoap", "/etc/liquidsoap/script.liq" ]
+        entrypoint: ["liquidsoap", "/etc/liquidsoap/script.liq"]
         restart: unless-stopped
         ports:
             - 8001-8002:8001-8002
