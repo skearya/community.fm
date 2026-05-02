@@ -13,11 +13,12 @@ class YoutubePls:
     def __init__(self, downloads_folder: str):
         self.ydl_opts = {
             "quiet": True,
+            "final_ext": "mp3",
             "format": "bestaudio/best",
             "outtmpl": f"{downloads_folder}/%(title)s.%(ext)s",
             "writethumbnail": True,
             "postprocessors": [
-                {"key": "FFmpegExtractAudio", "preferredcodec": "m4a"},
+                {"key": "FFmpegExtractAudio", "preferredcodec": "mp3"},
                 {"key": "FFmpegMetadata"},
                 {"key": "EmbedThumbnail"},
             ],

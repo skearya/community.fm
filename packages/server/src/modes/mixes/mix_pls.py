@@ -9,10 +9,12 @@ class MixPls:
         self.playlist_id = playlist_id
         self.ydl_opts = {
             "quiet": True,
+            "ignoreerrors": True,
+            "extract_flat": "in_playlist",
         }
 
     async def get_video_ids(self) -> List[str]:
-        def run():
+        def run() -> List[str]:
             try:
                 with YoutubeDL(self.ydl_opts) as ydl:
                     info = ydl.extract_info(self.playlist_id, download=False)

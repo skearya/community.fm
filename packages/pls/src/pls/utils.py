@@ -7,8 +7,8 @@ from rapidfuzz import fuzz
 class Request:
     url: str | None
     isrc: str | None
-    name: str
-    artist: str
+    name: str | None
+    artist: str | None
 
 
 @dataclass(frozen=True)

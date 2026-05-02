@@ -60,7 +60,11 @@ class Pls:
         ):
             return dl
 
-        if dl := await self.streamrip.search(tlogger, track.artist, track.name):
+        if (
+            track.artist
+            and track.name
+            and (dl := await self.streamrip.search(tlogger, track.artist, track.name))
+        ):
             return dl
 
         return None

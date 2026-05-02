@@ -1,3 +1,4 @@
+from os import environ
 import asyncio
 from typing import List
 import aiohttp
@@ -19,15 +20,14 @@ class State:
         self.modes: List[RadioMode] = [
             LikedSongsMode(self),
             LocalSongsMode(),
-            MixMode(self),
+            MixMode(self, environ["YOUTUBE_PLAYLIST_ID"]),
         ]
-        self.mode: RadioMode = self.modes[0]
+        self.mode: RadioMode = self.modes[2]
 
         self.session = aiohttp.ClientSession(base_url=LIQUIDSOAP_BASE_URL)
         self.pls = Pls(DATABASE_FILEPATH, MUSIC_DIRECTORY)
 
         self.liked: dict[int, LikedSongEntry] = {}
-        self.mixes: List[str] = []
         self.metadata: Subscribable[LiquidsoapMetadata] = Subscribable()
 
     async def setup_modes(self) -> None:
@@ -35,7 +35,7 @@ class State:
             await mode.setup()
 
     async def __aenter__(self) -> State:
-        await asyncio.gather(self.pls.login(), self.setup_modes())
+        asyncio.gather(self.pls.login(), self.setup_modes())
         return self
 
     async def __aexit__(self, *_):
