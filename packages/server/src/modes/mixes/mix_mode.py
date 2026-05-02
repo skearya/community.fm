@@ -1,7 +1,7 @@
 from loguru import logger
 from os import environ
 from modes.mode import RadioMode
-from mix import MixPls
+from modes.mixes.mix_pls import MixPls
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
