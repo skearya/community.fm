@@ -2,7 +2,7 @@ services:
     server:
         build:
             context: .
-            dockerfile: Dockerfile
+            dockerfile: packages/server/Dockerfile
         container_name: server
         restart: unless-stopped
         stop_grace_period: 1s
