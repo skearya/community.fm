@@ -1,10 +1,11 @@
 import csv
 from io import StringIO
+
 from bot import CustomBot
-from models import LikedSongEntry
 from discord import Attachment, Message, utils
 from discord.ext import commands
 from loguru import logger
+from models import LikedSongEntry
 from pls import Request
 
 LIKED_SONGS_CHANNEL = "liked-songs"
@@ -85,20 +86,20 @@ class LikedSongs(commands.Cog):
                 for attr in ["Track Name", "Artist Name(s)", "ISRC"]
             ):
                 return [
-                    Request(None, row["ISRC"], row["Track Name"], row["Artist Name(s)"])
+                    Request(
+                        url=None,
+                        isrc=row["ISRC"],
+                        name=row["Track Name"],
+                        artist=row["Artist Name(s)"],
+                    )
                     for row in reader
                 ]
 
-            def yt(row: dict[str, str]):
-                title = row["Title"].split(" - ")[:2]
-
-                if len(title) == 1:
-                    title.append("?")
-
-                return Request(row["Video url"], None, *title)
-
             if all(attr in reader.fieldnames for attr in ["Title", "Video url"]):
-                return [yt(row) for row in reader]
+                return [
+                    Request(url=row["Video url"], isrc=None, name=None, artist=None)
+                    for row in reader
+                ]
 
             return None
         except Exception:
