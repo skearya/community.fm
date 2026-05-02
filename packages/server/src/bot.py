@@ -6,6 +6,7 @@ from discord import Intents
 from discord.ext import commands
 from loguru import logger
 from state import State
+from utils import InterceptHandler
 
 TEST_GUILD = discord.Object(id=environ["DISCORD_TEST_GUILD"])
 BOT_TOKEN = environ["DISCORD_BOT_TOKEN"]
@@ -36,7 +37,7 @@ class CustomBot(commands.Bot):
 
 
 async def start(state: State):
-    discord.utils.setup_logging()
+    discord.utils.setup_logging(handler=InterceptHandler(), root=False)
 
     if Path("/usr/lib/libopus.so").exists():
         discord.opus.load_opus("/usr/lib/libopus.so")
