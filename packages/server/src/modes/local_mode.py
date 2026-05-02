@@ -11,6 +11,9 @@ class LocalSongsMode(RadioMode):
     def __init__(self):
         self.songs: list[Path] = []
 
+    async def setup(self) -> None:
+        return
+
     async def next(self) -> str:
         if not self.songs:
             self.reload()
@@ -22,13 +25,10 @@ class LocalSongsMode(RadioMode):
     def reload(self):
         self.songs = [file for file in MUSIC_DIR.rglob("*") if file.suffix in AUDIO_EXT]
 
-        if len(self.songs) == 0:
+        if not self.songs:
             raise Exception("/music should contain audio files")
 
         random.shuffle(self.songs)
-
-    async def setup(self) -> None:
-        return
 
     def __str__(self) -> str:
         return "Local Songs"

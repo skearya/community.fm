@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import List
 
 from pls import Request
 
@@ -9,7 +8,7 @@ NO_NEXT = "NO_NEXT"
 @dataclass
 class LikedSongEntry:
     username: str
-    songs: List[Request]
+    songs: list[Request]
 
 
 # Sourced from liquidsoap: `settings.encoder.metadata.export()` without `settings.encoder.metadata.cover()`

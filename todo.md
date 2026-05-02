@@ -6,6 +6,7 @@
 - dynamic title based on song title
 - favicon dynamically changes based on cover art
 - previous song history
+- load all .env vars upfront
 
 # possible radio modes/sources
 

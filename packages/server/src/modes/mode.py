@@ -3,13 +3,13 @@ from abc import ABC, abstractmethod
 
 class RadioMode(ABC):
     @abstractmethod
-    async def next(self) -> str:
-        """Returns the URI of the next song."""
+    async def setup(self) -> None:
+        """Sets up the mode on server startup."""
         pass
 
     @abstractmethod
-    async def setup(self) -> None:
-        """Sets up the mode on server startup."""
+    async def next(self) -> str:
+        """Returns the URI of the next song."""
         pass
 
     @abstractmethod

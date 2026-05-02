@@ -1,12 +1,12 @@
-from os import environ
 import asyncio
-from typing import List
+from os import environ
+
 import aiohttp
 from models import LikedSongEntry, LiquidsoapMetadata
 from modes.liked_mode import LikedSongsMode
-from modes.mode import RadioMode
 from modes.local_mode import LocalSongsMode
-from modes.mixes.mix_mode import MixMode
+from modes.mix_mode import MixMode
+from modes.mode import RadioMode
 from pls import Pls
 from utils import Subscribable
 
@@ -17,12 +17,12 @@ MUSIC_DIRECTORY = "/music"
 
 class State:
     def __init__(self):
-        self.modes: List[RadioMode] = [
+        self.modes: list[RadioMode] = [
             LikedSongsMode(self),
             LocalSongsMode(),
             MixMode(self, environ["YOUTUBE_PLAYLIST_ID"]),
         ]
-        self.mode: RadioMode = self.modes[2]
+        self.mode = self.modes[2]
 
         self.session = aiohttp.ClientSession(base_url=LIQUIDSOAP_BASE_URL)
         self.pls = Pls(DATABASE_FILEPATH, MUSIC_DIRECTORY)

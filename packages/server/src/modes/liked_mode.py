@@ -1,5 +1,6 @@
 import random
 from typing import TYPE_CHECKING
+
 from loguru import logger
 from models import NO_NEXT
 from modes.mode import RadioMode
@@ -11,6 +12,9 @@ if TYPE_CHECKING:
 class LikedSongsMode(RadioMode):
     def __init__(self, state: State):
         self.state = state
+
+    async def setup(self) -> None:
+        return
 
     async def next(self) -> str:
         if not self.state.liked:
@@ -27,9 +31,6 @@ class LikedSongsMode(RadioMode):
         else:
             logger.info(f"Failed to download liked song: {song}")
             return NO_NEXT
-
-    async def setup(self) -> None:
-        return
 
     def __str__(self) -> str:
         return "Liked Songs"
