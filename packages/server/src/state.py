@@ -18,11 +18,11 @@ MUSIC_DIRECTORY = "/music"
 class State:
     def __init__(self):
         self.modes: list[RadioMode] = [
+            MixMode(self, environ["YOUTUBE_PLAYLIST_ID"]),
             LikedSongsMode(self),
             LocalSongsMode(),
-            MixMode(self, environ["YOUTUBE_PLAYLIST_ID"]),
         ]
-        self.mode = self.modes[2]
+        self.mode = self.modes[0]
 
         self.session = aiohttp.ClientSession(base_url=LIQUIDSOAP_BASE_URL)
         self.pls = Pls(DATABASE_FILEPATH, MUSIC_DIRECTORY)

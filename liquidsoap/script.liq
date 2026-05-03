@@ -10,6 +10,7 @@ log.stdout := true
 
 # Assets
 oops = single("/etc/liquidsoap/assets/oops.mp3")
+loading = single("/etc/liquidsoap/assets/loading.mp3")
 radio_intro = single("/etc/liquidsoap/assets/radio-intro.mp3")
 stream_intro = single("/etc/liquidsoap/assets/stream-intro.mp3")
 
@@ -21,6 +22,9 @@ end
 
 # Build the feed from the server
 feed = request.dynamic(retry_delay=5.0, next)
+
+# Use special loading sound when server returns "NO_NEXT"
+feed = fallback(track_sensitive=false, [feed, loading])
 
 # Skip blanks longer than 3 seconds
 radio = blank.skip(max_blank=3.0, feed)
@@ -48,7 +52,7 @@ def to_radio(a, b) =
   add(normalize=false, [fade.in(b), once(radio_intro), fade.out(a)])
 end
 
-# Use live input if exists, otherwise play /music, or oops.mp3
+# Use live input if exists, otherwise play feed, or oops
 radio =
   fallback(
     track_sensitive=false,
