@@ -12,6 +12,9 @@ if TYPE_CHECKING:
 
 
 class LikedSongsMode(RadioMode):
+    def name(self) -> str:
+        return "Liked Songs"
+
     def __init__(self, state: State):
         self.state = state
         self.task: Task[str] | None = None
@@ -45,6 +48,3 @@ class LikedSongsMode(RadioMode):
                 return f'annotate:user="{entry.username}":{dl.path}'
 
             logger.info(f"Failed to download liked song: {song}")
-
-    def __str__(self) -> str:
-        return "Liked Songs"

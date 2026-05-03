@@ -54,6 +54,37 @@ class Stream(commands.Cog):
         await interaction.guild.voice_client.disconnect(force=True)
         await interaction.response.send_message("Left.")
 
+    async def mode_autocomplete(
+        self, _interaction: discord.Interaction, current: str
+    ) -> list[app_commands.Choice[str]]:
+        return [
+            app_commands.Choice(name=mode.name(), value=mode.name())
+            for mode in self.bot.state.modes
+            if current in mode.name()
+        ]
+
+    @app_commands.command(description="Get or set the current radio mode.")
+    @app_commands.autocomplete(name=mode_autocomplete)
+    @app_commands.guild_only()
+    async def mode(self, interaction: Interaction, name: str | None):
+        if name is None:
+            await interaction.response.send_message(
+                f"Currently in the '{self.bot.state.mode.name()}' mode."
+            )
+            return
+
+        match = next(
+            (mode for mode in self.bot.state.modes if mode.name() == name), None
+        )
+
+        if mode := match:
+            self.bot.state.mode = mode
+            await interaction.response.send_message(f"Set mode to {name}.")
+        else:
+            await interaction.response.send_message(
+                f"I couldn't find a mode with the name '{name}'."
+            )
+
     @app_commands.command(
         name="now-playing", description="Get the currently playing song on the radio."
     )

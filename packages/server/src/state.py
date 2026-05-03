@@ -1,3 +1,4 @@
+import random
 from os import environ
 
 import aiohttp
@@ -21,7 +22,7 @@ class State:
             LikedSongsMode(self),
             LocalSongsMode(),
         ]
-        self.mode = self.modes[1]
+        self.mode = random.choice(self.modes)
 
         self.session = aiohttp.ClientSession(base_url=LIQUIDSOAP_BASE_URL)
         self.pls = Pls(DATABASE_FILEPATH, MUSIC_DIRECTORY)

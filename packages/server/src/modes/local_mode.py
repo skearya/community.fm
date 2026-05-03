@@ -8,6 +8,9 @@ AUDIO_EXT = {".3gp", ".aa", ".aac", ".aax", ".act", ".aiff", ".alac", ".amr", ".
 
 
 class LocalSongsMode(RadioMode):
+    def name(self) -> str:
+        return "Local Songs"
+
     def __init__(self):
         self.songs: list[Path] = []
 
@@ -27,6 +30,3 @@ class LocalSongsMode(RadioMode):
             raise Exception("/music should contain audio files")
 
         random.shuffle(self.songs)
-
-    def __str__(self) -> str:
-        return "Local Songs"

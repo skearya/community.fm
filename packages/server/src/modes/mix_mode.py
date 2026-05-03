@@ -14,6 +14,9 @@ if TYPE_CHECKING:
 
 
 class MixMode(RadioMode):
+    def name(self) -> str:
+        return "YouTube Mixes"
+
     def __init__(self, state: State, playlist_id: str):
         self.state = state
         self.playlist: list[Request] = []
@@ -56,11 +59,8 @@ class MixMode(RadioMode):
             if dl := await self.state.pls.give(request):
                 logger.info(f"Queued mix: {request.url}")
                 return dl.path
-            else:
-                logger.warning(f"Failed to download mix: {request.name}")
 
-    def __str__(self) -> str:
-        return "YouTube Mixes"
+            logger.warning(f"Failed to download mix: {request.name}")
 
 
 ydl_opts = {
