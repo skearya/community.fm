@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import re
 from dataclasses import fields
@@ -15,6 +16,7 @@ STREAM_URL = environ["RADIO_STREAM_URL"]
 class Stream(commands.Cog):
     def __init__(self, bot: CustomBot):
         self.bot = bot
+        self.status_task = asyncio.create_task(self.status_updater())
 
     @app_commands.command(description="Start playing the radio in the VC you're in.")
     @app_commands.guild_only()
@@ -101,6 +103,21 @@ class Stream(commands.Cog):
             response.raise_for_status()
 
             await interaction.response.send_message("Skipped.")
+
+    async def status_updater(self):
+        async with self.bot.state.metadata.subscribe() as queue:
+            while True:
+                metadata = await queue.get()
+
+                activity = discord.Activity(
+                    type=discord.ActivityType.listening,
+                    name=f"{metadata.artist or 'Unknown Artist'} - {metadata.title or 'Unknown Title'}",
+                )
+
+                try:
+                    await self.bot.change_presence(activity=activity)
+                except Exception:
+                    pass
 
 
 async def setup(bot: CustomBot):

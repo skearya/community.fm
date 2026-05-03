@@ -1,6 +1,7 @@
 import asyncio
 import inspect
 import logging
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 from loguru import logger
@@ -14,14 +15,14 @@ class Subscribable[T]:
         self.value = initial
         self.subscribers = set()
 
-    def update(self, value: T):
+    def update(self, value: T) -> None:
         self.value = value
 
         for subscriber in self.subscribers:
             subscriber.put_nowait(value)
 
     @asynccontextmanager
-    async def subscribe(self):
+    async def subscribe(self) -> AsyncGenerator[asyncio.Queue[T]]:
         queue = asyncio.Queue[T]()
         self.subscribers.add(queue)
 
