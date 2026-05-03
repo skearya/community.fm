@@ -27,7 +27,7 @@ class LikedSongs(commands.Cog):
                     if author.id in self.bot.state.liked:
                         continue
                     if songs := await self._extract_songs(message):
-                        self._update_songs(author.id, author.name, songs)
+                        self.update_songs(author.id, author.name, songs)
         logger.info(f"Got liked songs for {len(self.bot.state.liked)} user(s).")
 
     @commands.Cog.listener()
@@ -37,11 +37,11 @@ class LikedSongs(commands.Cog):
         if author.bot or str(message.channel) != LIKED_SONGS_CHANNEL:
             return
 
-        if self._find_csv(message) is None:
+        if self.find_csv(message) is None:
             return  # don't reply to messages without csvs
 
         if songs := await self._extract_songs(message):
-            self._update_songs(author.id, author.name, songs)
+            self.update_songs(author.id, author.name, songs)
             await message.reply(f"Updated {len(songs)} liked songs.")
             logger.info(f"Updated {len(songs)} liked song(s) for: {author.name}")
         else:
@@ -49,18 +49,18 @@ class LikedSongs(commands.Cog):
                 "Invalid CSV. Please use https://exportify.app/ or https://export-youtube-playlist.vercel.app/"
             )
 
-    def _update_songs(self, user_id: int, username: str, songs: list[Request]) -> None:
+    def update_songs(self, user_id: int, username: str, songs: list[Request]) -> None:
         self.bot.state.liked[user_id] = LikedSongEntry(username, songs)
 
     async def _extract_songs(self, message: Message) -> list[Request] | None:
         """Find, fetch, and parse a CSV from a message."""
-        if attachment := self._find_csv(message):
+        if attachment := self.find_csv(message):
             csv_text = await self._fetch_csv(attachment)
-            return self._parse_csv(csv_text)
+            return self.parse_csv(csv_text)
         else:
             return None
 
-    def _find_csv(self, message: Message) -> Attachment | None:
+    def find_csv(self, message: Message) -> Attachment | None:
         return next(
             (
                 a
@@ -75,7 +75,7 @@ class LikedSongs(commands.Cog):
             response.raise_for_status()
             return await response.text()
 
-    def _parse_csv(self, csv_text: str) -> list[Request] | None:
+    def parse_csv(self, csv_text: str) -> list[Request] | None:
         try:
             reader = csv.DictReader(StringIO(csv_text))
             if reader.fieldnames is None:

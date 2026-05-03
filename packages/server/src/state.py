@@ -1,4 +1,3 @@
-import asyncio
 from os import environ
 
 import aiohttp
@@ -22,7 +21,7 @@ class State:
             LikedSongsMode(self),
             LocalSongsMode(),
         ]
-        self.mode = self.modes[0]
+        self.mode = self.modes[1]
 
         self.session = aiohttp.ClientSession(base_url=LIQUIDSOAP_BASE_URL)
         self.pls = Pls(DATABASE_FILEPATH, MUSIC_DIRECTORY)
@@ -35,7 +34,8 @@ class State:
             await mode.setup()
 
     async def __aenter__(self) -> State:
-        asyncio.gather(self.pls.login(), self.setup_modes())
+        await self.pls.login()
+        await self.setup_modes()
         return self
 
     async def __aexit__(self, *_):

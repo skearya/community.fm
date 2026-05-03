@@ -1,3 +1,5 @@
+import asyncio
+from asyncio import Task
 import random
 from typing import TYPE_CHECKING
 
@@ -12,25 +14,37 @@ if TYPE_CHECKING:
 class LikedSongsMode(RadioMode):
     def __init__(self, state: State):
         self.state = state
+        self.task: Task[str] | None = None
 
     async def setup(self) -> None:
         return
 
     async def next(self) -> str:
-        if not self.state.liked:
-            logger.info("No liked songs have been loaded.")
-            return NO_NEXT
+        match self.task:
+            case Task() if self.task.done():
+                dl, self.task = self.task.result(), None
+                return dl
+            case Task():
+                return NO_NEXT
+            case None:
+                self.task = asyncio.create_task(self.fetch())
+                return NO_NEXT
 
-        user_id = random.choice(list(self.state.liked.keys()))
-        entry = self.state.liked[user_id]
-        song = random.choice(entry.songs)
+    async def fetch(self) -> str:
+        while True:
+            if not self.state.liked:
+                logger.info("No liked songs have been loaded.")
+                return NO_NEXT
 
-        if dl := await self.state.pls.give(song):
-            logger.info(f"Serving liked song from {entry.username}: {dl.path}")
-            return f'annotate:user="{entry.username}":{dl.path}'
-        else:
+            user_id = random.choice(list(self.state.liked.keys()))
+            entry = self.state.liked[user_id]
+            song = random.choice(entry.songs)
+
+            if dl := await self.state.pls.give(song):
+                logger.info(f"Serving liked song from {entry.username}: {dl.path}")
+                return f'annotate:user="{entry.username}":{dl.path}'
+
             logger.info(f"Failed to download liked song: {song}")
-            return NO_NEXT
 
     def __str__(self) -> str:
         return "Liked Songs"
