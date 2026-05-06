@@ -1,7 +1,8 @@
 import random
-from os import environ
 
 import aiohttp
+from config import Config
+from loguru import logger
 from models import LikedSongEntry, LiquidsoapMetadata
 from modes.liked_mode import LikedSongsMode
 from modes.local_mode import LocalSongsMode
@@ -10,22 +11,28 @@ from modes.mode import RadioMode
 from pls import Pls
 from utils import Subscribable
 
-LIQUIDSOAP_BASE_URL = "http://liquidsoap:8002"
-DATABASE_FILEPATH = "/music/pls.db"
-MUSIC_DIRECTORY = "/music"
-
 
 class State:
     def __init__(self):
-        self.modes: list[RadioMode] = [
-            MixMode(self, environ["YOUTUBE_PLAYLIST_ID"]),
-            LikedSongsMode(self),
-            LocalSongsMode(),
-        ]
-        self.mode = random.choice(self.modes)
+        self.config = Config()
 
-        self.session = aiohttp.ClientSession(base_url=LIQUIDSOAP_BASE_URL)
-        self.pls = Pls(DATABASE_FILEPATH, MUSIC_DIRECTORY)
+        self.modes: list[RadioMode] = [
+            LocalSongsMode(self),
+            LikedSongsMode(self),
+        ]
+
+        if self.config.YOUTUBE_PLAYLIST_ID:
+            self.modes.append(MixMode(self, self.config.YOUTUBE_PLAYLIST_ID))
+        else:
+            logger.warning(
+                "YOUTUBE_PLAYLIST_ID environment variable unset, disabling YouTube mix mode"
+            )
+
+        self.mode = random.choice(self.modes)
+        self.session = aiohttp.ClientSession(base_url=self.config.LIQUIDSOAP_BASE_URL)
+        self.pls = Pls(
+            self.config.PLS_DATABASE_FILEPATH, self.config.PLS_DOWNLOAD_DIRECTORY
+        )
 
         self.liked: dict[int, LikedSongEntry] = {}
         self.metadata: Subscribable[LiquidsoapMetadata] = Subscribable()

@@ -1,20 +1,23 @@
-# todo
+# issues
 
 - fix the crazy liquidsoap source leak (logs: investigate.txt)
-- optimal stream encoding (make sure metadata works)
+- sometimes skipping a live mix will not update metadata of the new one?
+
+# todo
+
 - volume normalization?
+- previous song history
 - dynamic title based on song title
 - favicon dynamically changes based on cover art
-- previous song history
 - load all .env vars upfront
 
 # possible radio modes/sources
 
-- youtube playlist of live mixes
 - aoty/rym top singles of the week
 
 # nice to haves
 
+- add fuzzy search to youtube in pls
 - ability to queue songs onto the radio
 - recently released music from scenes we're currently listening to
     - probably have to use last.fm's api

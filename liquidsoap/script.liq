@@ -37,7 +37,7 @@ live =
   input.harbor(
     "live",
     port=8001,
-    user="miku",
+    user=environment.get("LIVE_SOURCE_USERNAME"),
     password=environment.get("LIVE_SOURCE_PASSWORD"),
     replay_metadata=true,
     buffer=5.00,

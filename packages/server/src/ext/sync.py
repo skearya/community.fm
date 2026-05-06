@@ -1,11 +1,7 @@
-from os import environ
-
 import discord
 from bot import CustomBot
 from discord import Interaction, app_commands
 from discord.ext import commands
-
-TEST_GUILD = discord.Object(id=environ["DISCORD_TEST_GUILD"])
 
 
 class Sync(commands.Cog):
@@ -14,10 +10,12 @@ class Sync(commands.Cog):
 
     @app_commands.command(description="Sync bot commands locally.")
     @app_commands.guild_only()
-    @app_commands.guilds(TEST_GUILD)
     async def sync(self, interaction: Interaction):
-        self.bot.tree.copy_global_to(guild=TEST_GUILD)
-        await self.bot.tree.sync(guild=TEST_GUILD)
+        assert self.bot.state.config.DISCORD_TEST_GUILD
+        DISCORD_TEST_GUILD = discord.Object(id=self.bot.state.config.DISCORD_TEST_GUILD)
+
+        self.bot.tree.copy_global_to(guild=DISCORD_TEST_GUILD)
+        await self.bot.tree.sync(guild=DISCORD_TEST_GUILD)
 
         await interaction.response.send_message("Synced.")
 

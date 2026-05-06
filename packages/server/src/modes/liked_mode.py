@@ -1,6 +1,6 @@
 import asyncio
-from asyncio import Task
 import random
+from asyncio import Task
 from typing import TYPE_CHECKING
 
 from loguru import logger

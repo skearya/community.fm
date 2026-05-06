@@ -3,14 +3,12 @@ import base64
 import re
 from dataclasses import fields
 from io import BytesIO
-from os import environ
 
 import discord
 from bot import CustomBot
 from discord import Interaction, Member, app_commands
 from discord.ext import commands
-
-STREAM_URL = environ["RADIO_STREAM_URL"]
+from loguru import logger
 
 
 class Stream(commands.Cog):
@@ -34,9 +32,11 @@ class Stream(commands.Cog):
         vc = await interaction.user.voice.channel.connect()
         await interaction.response.send_message("Joined.")
 
+        url = f"{self.bot.state.config.ICECAST_BASE_URL}/stream.ogg"
+
         vc.play(
-            discord.FFmpegPCMAudio(STREAM_URL),
-            after=lambda e: print(f"Player error: {e}") if e else None,
+            discord.FFmpegPCMAudio(url),
+            after=lambda e: logger.error(f"Discord player error: {e}") if e else None,
         )
 
     @app_commands.command(description="Stop playing the radio.")

@@ -1,4 +1,3 @@
-from os import environ
 from pathlib import Path
 
 import discord
@@ -7,9 +6,6 @@ from discord.ext import commands
 from loguru import logger
 from state import State
 from utils import InterceptHandler
-
-TEST_GUILD = discord.Object(id=environ["DISCORD_TEST_GUILD"])
-BOT_TOKEN = environ["DISCORD_BOT_TOKEN"]
 
 
 class CustomBot(commands.Bot):
@@ -27,7 +23,11 @@ class CustomBot(commands.Bot):
     async def setup_hook(self):
         await self.load_extension("ext.stream")
         await self.load_extension("ext.liked")
-        await self.load_extension("ext.sync")
+
+        if self.state.config.DISCORD_TEST_GUILD:
+            await self.load_extension("ext.sync")
+        else:
+            await self.tree.sync()
 
     async def on_ready(self):
         logger.info(f"Logged in as {self.user}")
@@ -43,4 +43,4 @@ async def start(state: State):
         discord.opus.load_opus("/usr/lib/libopus.so")
 
     async with CustomBot(state) as bot:
-        await bot.start(BOT_TOKEN)
+        await bot.start(state.config.DISCORD_BOT_TOKEN)
