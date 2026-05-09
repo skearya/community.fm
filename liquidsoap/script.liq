@@ -119,3 +119,16 @@ radio.on_metadata(
       )
     end
 )
+
+# Get current metadata
+harbor.http.register.simple(
+  port=8002,
+  method="GET",
+  "/metadata",
+  fun (_) ->
+    begin
+      http.response(
+        content_type="application/json", data=json.stringify(last_metadata())
+      )
+    end
+)

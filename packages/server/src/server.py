@@ -2,6 +2,7 @@ import asyncio
 import json
 from collections.abc import Iterable
 from dataclasses import asdict
+from typing import Literal, TypedDict
 
 from aiohttp import ClientConnectionResetError, web
 from aiohttp_sse import sse_response
@@ -33,17 +34,16 @@ async def handle_update_metadata(request: web.Request) -> web.Response:
     return web.Response(status=200)
 
 
-@public.get("/api/info")
-async def handle_get_info(request: web.Request) -> web.StreamResponse:
-    state = request.app[STATE_KEY]
+class InfoMessage(TypedDict):
+    type: Literal["info"]
+    stream: str
+    metadata: dict[str, str | None] | None
+    modes: list[str]
 
-    response = {
-        "stream": state.config.STREAM_BASE_URL,
-        "metadata": asdict(state.metadata.value) if state.metadata.value else None,
-        "modes": [mode.name() for mode in state.modes],
-    }
 
-    return web.json_response(response)
+class MetadataMessage(TypedDict):
+    type: Literal["metadata"]
+    metadata: dict[str, str | None]
 
 
 @public.get("/api/subscribe")
@@ -52,9 +52,24 @@ async def handle_get_subscribe(request: web.Request) -> web.StreamResponse:
 
     try:
         async with sse_response(request) as resp, state.metadata.subscribe() as queue:
+            info: InfoMessage = {
+                "type": "info",
+                "stream": state.config.STREAM_BASE_URL,
+                "metadata": asdict(state.metadata.value)
+                if state.metadata.value
+                else None,
+                "modes": [mode.name() for mode in state.modes],
+            }
+
+            await resp.send(json.dumps(info))
+
             while True:
-                metadata = await queue.get()
-                await resp.send(json.dumps(asdict(metadata)))
+                metadata: MetadataMessage = {
+                    "type": "metadata",
+                    "metadata": asdict(await queue.get()),
+                }
+
+                await resp.send(json.dumps(metadata))
     except ClientConnectionResetError:
         pass
     except Exception:
