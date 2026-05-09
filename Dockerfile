@@ -1,7 +1,7 @@
 # Use a Python image with uv pre-installed
 FROM ghcr.io/astral-sh/uv:python3.14-alpine AS builder
 
-# Install git
+# Install git (needed to fetch non-pypi deps)
 RUN apk add --no-cache git
 
 # Install the project into `/app`
@@ -37,8 +37,9 @@ COPY . /app
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --package=server
 
+
 # Then, use a final image without uv
-FROM python:3.14-alpine
+FROM python:3.14-alpine AS runner
 # It is important to use the image that matches the builder, as the path to the
 # Python executable must be the same, e.g., using `python:3.11-slim-bookworm`
 # will fail.
@@ -64,3 +65,31 @@ WORKDIR /app
 
 # Run the server
 CMD ["python", "packages/server/src/main.py"]
+
+
+FROM runner AS development
+
+
+FROM node:26-alpine AS web-builder
+
+# Install the project into `/web`
+WORKDIR /web
+
+# Install production dependencies
+RUN --mount=type=cache,target=/root/.npm,sharing=locked \
+    --mount=type=bind,source=web/package-lock.json,target=package-lock.json \
+    --mount=type=bind,source=web/package.json,target=package.json \
+    --mount=type=bind,source=web/svelte.config.js,target=svelte.config.js \
+    npm ci --no-audit --no-fund
+
+# Copy source files
+COPY web .
+
+# Build site, files accesible at /web/build
+RUN npm run build
+
+
+FROM runner AS production
+
+# Copy web build
+COPY --from=web-builder /web/build /static

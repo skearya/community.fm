@@ -33,15 +33,25 @@ async def handle_update_metadata(request: web.Request) -> web.Response:
     return web.Response(status=200)
 
 
-@public.get("/metadata")
-async def handle_get_metadata(request: web.Request) -> web.StreamResponse:
+@public.get("/api/info")
+async def handle_get_info(request: web.Request) -> web.StreamResponse:
+    state = request.app[STATE_KEY]
+
+    response = {
+        "stream": state.config.STREAM_BASE_URL,
+        "metadata": asdict(state.metadata.value) if state.metadata.value else None,
+        "modes": [mode.name() for mode in state.modes],
+    }
+
+    return web.json_response(response)
+
+
+@public.get("/api/subscribe")
+async def handle_get_subscribe(request: web.Request) -> web.StreamResponse:
     state = request.app[STATE_KEY]
 
     try:
         async with sse_response(request) as resp, state.metadata.subscribe() as queue:
-            if metadata := state.metadata.value:
-                await resp.send(json.dumps(asdict(metadata)))
-
             while True:
                 metadata = await queue.get()
                 await resp.send(json.dumps(asdict(metadata)))
@@ -76,13 +86,23 @@ async def spawn(
 
 
 async def start(state: State):
-    await spawn(
-        state,
-        [web.get("/", handle_index), web.static("/", "/static"), *public],
-        "Public",
-        8080,
-    )
+    # In development, /static will not contain the built frontend (use Vite's dev server).
+    # In production, the server will be serving the static frontend.
+    if state.config.DEV:
+        await spawn(
+            state=state,
+            routes=public,
+            label="Public (Development)",
+            port=8080,
+        )
+    else:
+        await spawn(
+            state=state,
+            routes=[web.get("/", handle_index), web.static("/", "/static"), *public],
+            label="Public (Production)",
+            port=8080,
+        )
 
-    await spawn(state, internal, "Internal", 8081)
+    await spawn(state=state, routes=internal, label="Internal", port=8081)
 
     await asyncio.Event().wait()

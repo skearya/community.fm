@@ -1,10 +1,25 @@
-format:
+pre: format check
+
+format: format-server format-web
+
+check: check-server check-web
+
+format-server:
     uv run ruff format
 
-check:
+check-server:
     uv run ty check
     uv run ruff check
 
-publish: format check
-    docker build -t ghcr.io/skearya/radio:latest -f packages/server/Dockerfile .
+[working-directory('web')]
+format-web:
+    npm run format
+
+[working-directory('web')]
+check-web:
+    npm run check
+    npm run lint
+
+publish: pre
+    docker build -t ghcr.io/skearya/radio:latest -f Dockerfile .
     docker push ghcr.io/skearya/radio:latest

@@ -2,19 +2,20 @@ services:
     server:
         build:
             context: .
-            dockerfile: packages/server/Dockerfile
+            dockerfile: Dockerfile
+            target: ${MODE}
         container_name: server
         restart: unless-stopped
         stop_grace_period: 1s
         ports:
             - 8080:8080
         environment:
+            - MODE
+            - STREAM_BASE_URL
             - DISCORD_BOT_TOKEN
             - DISCORD_TEST_GUILD
-            - STREAM_BASE_URL
             - YOUTUBE_PLAYLIST_ID
         volumes:
-            - ./web:/static:ro
             - ${DATA_DIRECTORY}:/data:rw
             - ${DOWNLOAD_DIRECTORY}:/downloads:rw
             - ${LOCAL_MUSIC_DIRECTORY}:/music:ro

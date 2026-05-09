@@ -1,9 +1,21 @@
 *
 
-!packages/**/*.py
-!web/
-
-!**/pyproject.toml
-!**/.python-version
 !**/README.md
+
+!packages/**/*.py
+!packages/**/pyproject.toml
+!packages/**/.python-version
+!pyproject.toml
 !uv.lock
+
+!web/src/
+!web/static/
+!web/.npmrc
+!web/.prettierignore
+!web/.prettierrc
+!web/eslint.config.js
+!web/package-lock.json
+!web/package.json
+!web/svelte.config.js
+!web/tsconfig.json
+!web/vite.config.ts

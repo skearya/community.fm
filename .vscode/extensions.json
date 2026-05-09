@@ -2,7 +2,10 @@
 	"recommendations": [
 		"astral-sh.ty",
 		"charliermarsh.ruff",
-		"savonet.vscode-liquidsoap",
-		"esbenp.prettier-vscode"
+		"svelte.svelte-vscode",
+		"esbenp.prettier-vscode",
+		"dbaeumer.vscode-eslint",
+		"bradlc.vscode-tailwindcss",
+		"savonet.vscode-liquidsoap"
 	]
 }

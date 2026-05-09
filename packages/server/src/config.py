@@ -1,9 +1,12 @@
-from os import environ
 from dataclasses import dataclass
+from os import environ
 
 
 @dataclass
 class Config:
+    DEV = environ.get("MODE", "production") == "development"
+    PROD = environ.get("MODE", "production") == "production"
+
     STREAM_BASE_URL = environ["STREAM_BASE_URL"]
     DISCORD_BOT_TOKEN = environ["DISCORD_BOT_TOKEN"]
     DISCORD_TEST_GUILD = environ.get("DISCORD_TEST_GUILD", None)
