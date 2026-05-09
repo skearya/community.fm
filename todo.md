@@ -1,7 +1,6 @@
 # issues
 
 - fix the crazy liquidsoap source leak (logs: investigate.txt)
-- sometimes skipping a live mix will not update metadata of the new one?
 
 # todo
 
