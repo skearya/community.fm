@@ -84,9 +84,13 @@ async def handle_index(_request: web.Request) -> web.FileResponse:
 
 
 async def spawn(
-    state: State, routes: Iterable[web.AbstractRouteDef], label: str, port: int
+    state: State,
+    routes: Iterable[web.AbstractRouteDef],
+    label: str,
+    port: int,
+    client_max_size: int = 1024**2,
 ):
-    app = web.Application()
+    app = web.Application(client_max_size=client_max_size)
     app[STATE_KEY] = state
 
     app.add_routes(routes)
@@ -101,7 +105,7 @@ async def spawn(
 
 
 async def start(state: State):
-    # In development, /static will not contain the built frontend (use Vite's dev server).
+    # In development, /static will not contain the built frontend (use Vite's dev server instead).
     # In production, the server will be serving the static frontend.
     if state.config.DEV:
         await spawn(
@@ -118,6 +122,14 @@ async def start(state: State):
             port=8080,
         )
 
-    await spawn(state=state, routes=internal, label="Internal", port=8081)
+    await spawn(
+        state=state,
+        routes=internal,
+        label="Internal",
+        port=8081,
+        # Let liquidsoap send ~50MB requests due to large coverart.
+        # Excessive, but better safe than sorry.
+        client_max_size=1024**2 * 50,
+    )
 
     await asyncio.Event().wait()
