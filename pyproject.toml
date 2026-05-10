@@ -1,5 +1,5 @@
 [project]
-name = "radio"
+name = "community.fm"
 version = "0.1.0"
 requires-python = ">=3.14"
 
@@ -7,7 +7,4 @@ requires-python = ">=3.14"
 members = ["packages/*"]
 
 [dependency-groups]
-dev = [
-    "ruff>=0.15.12",
-    "ty>=0.0.33",
-]
+dev = ["ruff>=0.15.12", "ty>=0.0.33"]

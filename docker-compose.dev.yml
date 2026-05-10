@@ -3,7 +3,7 @@ services:
         build:
             dockerfile: Dockerfile
             target: ${MODE}
-        container_name: radio-server
+        container_name: community.fm-server
         restart: unless-stopped
         stop_grace_period: 1s
         ports:
@@ -21,7 +21,7 @@ services:
             - ${STREAMRIP_CONFIG_PATH}:/home/nonroot/.config/streamrip/config.toml:ro
     icecast:
         image: ghcr.io/libretime/icecast:2.4.4
-        container_name: radio-icecast
+        container_name: community.fm-icecast
         restart: unless-stopped
         ports:
             - 8000:8000
@@ -39,7 +39,7 @@ services:
             - server
     liquidsoap:
         build: liquidsoap
-        container_name: radio-liquidsoap
+        container_name: community.fm-liquidsoap
         restart: unless-stopped
         ports:
             - 8001-8002:8001-8002

@@ -1,7 +1,7 @@
 services:
     server:
-        image: ghcr.io/skearya/radio-server:latest
-        container_name: radio-server
+        image: ghcr.io/skearya/community.fm-server:latest
+        container_name: community.fm-server
         restart: unless-stopped
         stop_grace_period: 1s
         ports:
@@ -19,7 +19,7 @@ services:
             - ${STREAMRIP_CONFIG_PATH}:/home/nonroot/.config/streamrip/config.toml:ro
     icecast:
         image: ghcr.io/libretime/icecast:2.4.4
-        container_name: radio-icecast
+        container_name: community.fm-icecast
         restart: unless-stopped
         ports:
             - 8000:8000
@@ -36,8 +36,8 @@ services:
         depends_on:
             - server
     liquidsoap:
-        image: ghcr.io/skearya/radio-liquidsoap:latest
-        container_name: radio-liquidsoap
+        image: ghcr.io/skearya/community.fm-liquidsoap:latest
+        container_name: community.fm-liquidsoap
         restart: unless-stopped
         ports:
             - 8001-8002:8001-8002
