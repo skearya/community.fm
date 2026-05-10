@@ -47,7 +47,7 @@ jobs:
               id: meta-liquidsoap
               uses: docker/metadata-action@v6
               with:
-                  images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+                  images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-liquidsoap
 
             - name: Build and push liquidsoap's Docker image
               id: push-liquidsoap
