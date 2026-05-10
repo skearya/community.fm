@@ -16,5 +16,5 @@ class Config:
     PLS_DOWNLOAD_DIRECTORY = "/downloads"
     PLS_DATABASE_FILEPATH = "/data/pls.db"
 
-    ICECAST_BASE_URL = "http://icecast:8000"
-    LIQUIDSOAP_BASE_URL = "http://liquidsoap:8002"
+    ICECAST_BASE_URL = "http://community-fm-icecast:8000"
+    LIQUIDSOAP_BASE_URL = "http://community-fm-liquidsoap:8002"

@@ -1,6 +1,6 @@
 #!/usr/bin/liquidsoap
 
-BASE_URL = "http://server:8081"
+BASE_URL = "http://community-fm-server:8081"
 
 settings.encoder.metadata.export :=
   [...settings.encoder.metadata.export(), "user"]
@@ -64,7 +64,7 @@ radio =
 # Stream it out in OGG and MP3
 output.icecast(
   %mp3,
-  host="icecast",
+  host="community-fm-icecast",
   port=8000,
   password=environment.get("ICECAST_SOURCE_PASSWORD"),
   mount="stream.mp3",
@@ -73,7 +73,7 @@ output.icecast(
 
 output.icecast(
   %vorbis.abr(bitrate = 192, max_bitrate = 256, min_bitrate = 128),
-  host="icecast",
+  host="community-fm-icecast",
   port=8000,
   password=environment.get("ICECAST_SOURCE_PASSWORD"),
   mount="stream.ogg",

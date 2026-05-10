@@ -1,5 +1,5 @@
 services:
-    server:
+    community-fm-server:
         build:
             dockerfile: Dockerfile
             target: ${MODE}
@@ -19,7 +19,7 @@ services:
             - ${DOWNLOAD_DIRECTORY}:/downloads:rw
             - ${LOCAL_MUSIC_DIRECTORY}:/music:ro
             - ${STREAMRIP_CONFIG_PATH}:/home/nonroot/.config/streamrip/config.toml:ro
-    icecast:
+    community-fm-icecast:
         image: ghcr.io/libretime/icecast:2.4.4
         container_name: community.fm-icecast
         restart: unless-stopped
@@ -36,8 +36,8 @@ services:
             - ICECAST_MAX_CLIENTS
             - ICECAST_MAX_SOURCES
         depends_on:
-            - server
-    liquidsoap:
+            - community-fm-server
+    community-fm-liquidsoap:
         build: liquidsoap
         container_name: community.fm-liquidsoap
         restart: unless-stopped
@@ -51,4 +51,4 @@ services:
             - ${DOWNLOAD_DIRECTORY}:/downloads:rw
             - ${LOCAL_MUSIC_DIRECTORY}:/music:ro
         depends_on:
-            - icecast
+            - community-fm-icecast
