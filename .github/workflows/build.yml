@@ -21,7 +21,6 @@ jobs:
             - name: Checkout repository
               uses: actions/checkout@v6
 
-            # Uses the `docker/login-action` action to log in to the Container registry registry using the account and password that will publish the packages. Once published, the packages are scoped to the account defined here.
             - name: Log in to the Container registry
               uses: docker/login-action@v4
               with:
@@ -29,21 +28,33 @@ jobs:
                   username: ${{ github.actor }}
                   password: ${{ secrets.GITHUB_TOKEN }}
 
-            # This step uses [docker/metadata-action](https://github.com/docker/metadata-action#about) to extract tags and labels that will be applied to the specified image. The `id` "meta" allows the output of this step to be referenced in a subsequent step. The `images` value provides the base name for the tags and labels.
-            - name: Extract metadata (tags, labels) for Docker
-              id: meta
+            - name: Extract metadata (tags, labels) for server's Docker image
+              id: meta-server
               uses: docker/metadata-action@v6
               with:
-                  images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+                  images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-server
 
-            # This step uses the `docker/build-push-action` action to build the image, based on your repository's `Dockerfile`. If the build succeeds, it pushes the image to GitHub Packages.
-            # It uses the `context` parameter to define the build's context as the set of files located in the specified path. For more information, see [Usage](https://github.com/docker/build-push-action#usage) in the README of the `docker/build-push-action` repository.
-            # It uses the `tags` and `labels` parameters to tag and label the image with the output from the "meta" step.
-            - name: Build and push Docker image
-              id: push
+            - name: Build and push server's Docker image
+              id: push-server
               uses: docker/build-push-action@v7
               with:
                   context: .
                   push: true
-                  tags: ${{ steps.meta.outputs.tags }}
-                  labels: ${{ steps.meta.outputs.labels }}
+                  tags: ${{ steps.meta-server.outputs.tags }}
+                  labels: ${{ steps.meta-server.outputs.labels }}
+
+            - name: Extract metadata (tags, labels) for liquidsoap's Docker image
+              id: meta-liquidsoap
+              uses: docker/metadata-action@v6
+              with:
+                  images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+            - name: Build and push liquidsoap's Docker image
+              id: push-liquidsoap
+              uses: docker/build-push-action@v7
+              with:
+                  context: liquidsoap
+                  file: liquidsoap/Dockerfile
+                  push: true
+                  tags: ${{ steps.meta-liquidsoap.outputs.tags }}
+                  labels: ${{ steps.meta-liquidsoap.outputs.labels }}
