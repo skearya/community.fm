@@ -1,7 +1,6 @@
 services:
     server:
         build:
-            context: .
             dockerfile: Dockerfile
             target: ${MODE}
         container_name: server
@@ -39,9 +38,8 @@ services:
         depends_on:
             - server
     liquidsoap:
-        image: savonet/liquidsoap:v2.4.4
+        build: liquidsoap
         container_name: liquidsoap
-        entrypoint: ["liquidsoap", "/etc/liquidsoap/script.liq"]
         restart: unless-stopped
         ports:
             - 8001-8002:8001-8002
@@ -50,7 +48,6 @@ services:
             - LIVE_SOURCE_USERNAME
             - LIVE_SOURCE_PASSWORD
         volumes:
-            - ./liquidsoap:/etc/liquidsoap:ro
             - ${DOWNLOAD_DIRECTORY}:/downloads:rw
             - ${LOCAL_MUSIC_DIRECTORY}:/music:ro
         depends_on:

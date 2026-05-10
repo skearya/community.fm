@@ -1,0 +1,4 @@
+*
+
+!assets/**/*.mp3
+!script.liq
