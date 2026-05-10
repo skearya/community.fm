@@ -95,7 +95,7 @@
 					<a rel="external" {href} class="bg-pink-400 py-0.5 pr-3.5 pl-2">{name}</a>
 				{/each}
 			</div>
-			{#if s.data.metadata?.user}
+			{#if s.data.metadata?.cover}
 				<img alt="cover" src={s.data.metadata.cover} />
 			{/if}
 			<div class="max-w-full px-2 py-1.5">
