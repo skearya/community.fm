@@ -1,0 +1,52 @@
+services:
+    server:
+        image: ghcr.io/skearya/radio-server:latest
+        container_name: radio-server
+        restart: unless-stopped
+        stop_grace_period: 1s
+        ports:
+            - 8080:8080
+        environment:
+            - MODE
+            - STREAM_BASE_URL
+            - DISCORD_BOT_TOKEN
+            - DISCORD_TEST_GUILD
+            - YOUTUBE_PLAYLIST_ID
+        volumes:
+            - ${DATA_DIRECTORY}:/data:rw
+            - ${DOWNLOAD_DIRECTORY}:/downloads:rw
+            - ${LOCAL_MUSIC_DIRECTORY}:/music:ro
+            - ${STREAMRIP_CONFIG_PATH}:/home/nonroot/.config/streamrip/config.toml:ro
+    icecast:
+        image: ghcr.io/libretime/icecast:2.4.4
+        container_name: radio-icecast
+        restart: unless-stopped
+        ports:
+            - 8000:8000
+        environment:
+            - ICECAST_SOURCE_PASSWORD
+            - ICECAST_RELAY_PASSWORD
+            - ICECAST_ADMIN_PASSWORD
+            - ICECAST_ADMIN_USERNAME
+            - ICECAST_ADMIN_EMAIL
+            - ICECAST_LOCATION
+            - ICECAST_HOSTNAME
+            - ICECAST_MAX_CLIENTS
+            - ICECAST_MAX_SOURCES
+        depends_on:
+            - server
+    liquidsoap:
+        image: ghcr.io/skearya/radio-liquidsoap:latest
+        container_name: radio-liquidsoap
+        restart: unless-stopped
+        ports:
+            - 8001-8002:8001-8002
+        environment:
+            - ICECAST_SOURCE_PASSWORD
+            - LIVE_SOURCE_USERNAME
+            - LIVE_SOURCE_PASSWORD
+        volumes:
+            - ${DOWNLOAD_DIRECTORY}:/downloads:rw
+            - ${LOCAL_MUSIC_DIRECTORY}:/music:ro
+        depends_on:
+            - icecast
