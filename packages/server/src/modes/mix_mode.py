@@ -20,6 +20,7 @@ class MixMode(RadioMode):
         self.playlist: list[Request] = []
         self.playlist_id = playlist_id
         self.order: list[Request] = []
+        self.task: Task[LiquidsoapUri | None] | None = None
 
     async def setup(self) -> None:
         logger.info(f"Getting YouTube mixes from playlist {self.playlist_id}...")

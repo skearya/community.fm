@@ -15,6 +15,8 @@ class LikedSongsMode(RadioMode):
     def __init__(self, state: State):
         super().__init__("Liked Songs", state)
 
+        self.task: Task[LiquidsoapUri | None] | None = None
+
     async def setup(self) -> None:
         return
 
