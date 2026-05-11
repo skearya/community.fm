@@ -16,6 +16,9 @@ class Subscribable[T]:
         self.subscribers = set()
 
     def update(self, value: T) -> None:
+        if value == self.value:
+            return
+
         self.value = value
 
         for subscriber in self.subscribers:

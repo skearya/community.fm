@@ -128,7 +128,9 @@ class Stream(commands.Cog):
     @app_commands.command(description="Skip the currently playing song on the radio.")
     @app_commands.guild_only()
     async def skip(self, interaction: Interaction):
-        async with self.bot.state.session.post("/skip") as response:
+        async with self.bot.state.session.post(
+            f"{self.bot.state.config.LIQUIDSOAP_BASE_URL}/skip"
+        ) as response:
             response.raise_for_status()
 
             await interaction.response.send_message("Skipped.")

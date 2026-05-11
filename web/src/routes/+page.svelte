@@ -4,6 +4,7 @@
 	type Data = {
 		stream: string;
 		metadata: Record<string, string | null> | null;
+		status: Record<string, unknown> | null;
 		modes: string[];
 	};
 
@@ -13,7 +14,10 @@
 		| { type: 'ready'; data: Data }
 		| { type: 'error'; reason: string };
 
-	type Message = ({ type: 'info' } & Data) | { type: 'metadata'; metadata: Data['metadata'] };
+	type Message =
+		| ({ type: 'info' } & Data)
+		| { type: 'metadata'; metadata: Data['metadata'] }
+		| { type: 'status'; status: Data['status'] };
 
 	let s = $state<State>({ type: 'awaiting' });
 
@@ -36,6 +40,11 @@
 
 					s.data.metadata = message.metadata;
 					break;
+				case 'status':
+					if (s.type !== 'ready') throw new Error();
+
+					s.data.status = message.status;
+					break;
 				default:
 					message satisfies never;
 			}
@@ -52,6 +61,14 @@
 	let title = $derived(
 		s.type === 'ready' ? `${s.data.metadata?.title} - ${s.data.metadata?.artist}` : s.type
 	);
+
+	const getListeners = (status: Data['status']) => {
+		if (!status || !Array.isArray(status['source'])) return;
+		return status['source'].reduce((acc: number, s: Record<string, unknown>) => {
+			if (!(typeof s['listeners'] === 'number')) return 0;
+			return acc + s['listeners'];
+		}, 0);
+	};
 </script>
 
 <svelte:head>
@@ -82,6 +99,11 @@
 				{#if s.data.metadata?.user}
 					<div class="border border-r-0 border-amber-400 py-1 pr-2 pl-2">
 						{s.data.metadata.user}
+					</div>
+				{/if}
+				{#if s.data.status}
+					<div class="border border-r-0 border-amber-400 py-1 pr-2 pl-2">
+						Listeners: {getListeners(s.data.status)}
 					</div>
 				{/if}
 			</div>

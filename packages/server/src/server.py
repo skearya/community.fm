@@ -2,7 +2,7 @@ import asyncio
 import json
 from collections.abc import Iterable
 from dataclasses import asdict
-from typing import Literal, TypedDict
+from typing import Literal, TypedDict, Any
 
 from aiohttp import ClientConnectionResetError, web
 from aiohttp_sse import sse_response
@@ -43,6 +43,7 @@ class InfoMessage(TypedDict):
     type: Literal["info"]
     stream: str
     metadata: dict[str, str | None] | None
+    status: dict[str, Any | None] | None
     modes: list[str]
 
 
@@ -51,30 +52,47 @@ class MetadataMessage(TypedDict):
     metadata: dict[str, str | None]
 
 
+class StatusMessage(TypedDict):
+    type: Literal["status"]
+    status: dict[str, Any | None]
+
+
 @public.get("/api/subscribe")
 async def handle_get_subscribe(request: web.Request) -> web.StreamResponse:
     state = request.app[STATE_KEY]
 
     try:
-        async with sse_response(request) as resp, state.metadata.subscribe() as queue:
+        async with (
+            sse_response(request) as resp,
+            state.metadata.subscribe() as metadata_queue,
+            state.status.subscribe() as status_queue,
+        ):
             info: InfoMessage = {
                 "type": "info",
                 "stream": state.config.STREAM_BASE_URL,
                 "metadata": asdict(state.metadata.value)
                 if state.metadata.value
                 else None,
+                "status": asdict(state.status.value) if state.status.value else None,
                 "modes": [mode.name for mode in state.modes],
             }
 
             await resp.send(json.dumps(info))
 
-            while True:
-                metadata: MetadataMessage = {
-                    "type": "metadata",
-                    "metadata": asdict(await queue.get()),
-                }
+            send_lock = asyncio.Lock()
 
-                await resp.send(json.dumps(metadata))
+            async def forward(queue: asyncio.Queue, message_type: str):
+                while True:
+                    payload = asdict(await queue.get())
+                    message = {"type": message_type, message_type: payload}
+                    async with send_lock:
+                        await resp.send(json.dumps(message))
+
+            await asyncio.gather(
+                forward(metadata_queue, "metadata"),
+                forward(status_queue, "status"),
+            )
+
     except ClientConnectionResetError:
         pass
     except Exception:
