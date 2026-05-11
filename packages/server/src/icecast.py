@@ -1,8 +1,3 @@
-# contact icecast every second
-# at status-json.xsl file
-# extract contents and update state
-# all of this has to be done async
-
 import asyncio
 from typing import TYPE_CHECKING
 from models import IcecastStatus

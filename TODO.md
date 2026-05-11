@@ -16,7 +16,6 @@
 
 # nice to haves
 
-- live listener count
 - last.fm scrobbling
 - add fuzzy search to youtube in pls
 - ability to queue songs onto the radio
