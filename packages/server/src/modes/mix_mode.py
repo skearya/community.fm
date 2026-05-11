@@ -1,10 +1,10 @@
 import asyncio
 import random
-from asyncio.tasks import Task
+from asyncio import Task
 from typing import TYPE_CHECKING
 
 from loguru import logger
-from models import NO_NEXT
+from models import LiquidsoapUri
 from modes.mode import RadioMode
 from pls import Request
 from yt_dlp import YoutubeDL
@@ -14,15 +14,12 @@ if TYPE_CHECKING:
 
 
 class MixMode(RadioMode):
-    def name(self) -> str:
-        return "YouTube Mixes"
-
     def __init__(self, state: State, playlist_id: str):
-        self.state = state
+        super().__init__("YouTube Mixes", state)
+
         self.playlist: list[Request] = []
         self.playlist_id = playlist_id
         self.order: list[Request] = []
-        self.task: Task[str] | None = None
 
     async def setup(self) -> None:
         logger.info(f"Getting YouTube mixes from playlist {self.playlist_id}...")
@@ -31,43 +28,33 @@ class MixMode(RadioMode):
         self.playlist = [Request(url=i, isrc=None, name=None, artist=None) for i in ids]
         logger.info(f"Got {len(ids)} YouTube mix(es).")
 
-        self.task = asyncio.create_task(self.fetch())
-
-    async def next(self) -> str:
+    async def next(self) -> LiquidsoapUri | None:
         match self.task:
             case Task() if self.task.done():
                 dl, self.task = self.task.result(), None
                 return dl
             case Task():
-                return NO_NEXT
+                return None
             case None:
                 self.task = asyncio.create_task(self.fetch())
-                return NO_NEXT
+                return None
 
-    async def fetch(self) -> str:
-        while True:
-            if not self.playlist:
-                return NO_NEXT
+    async def fetch(self) -> LiquidsoapUri | None:
+        if not self.playlist:
+            return None
 
-            if not self.order:
-                self.order = self.playlist.copy()
-                random.shuffle(self.order)
+        if not self.order:
+            self.order = self.playlist.copy()
+            random.shuffle(self.order)
 
-            request = self.order.pop()
-            logger.info(f"Fetching mix: {request.url}")
+        request = self.order.pop()
+        logger.info(f"Fetching mix: {request.url}")
 
-            if dl := await self.state.pls.give(request):
-                logger.info(f"Queued mix: {request.url}")
-                return dl.path
+        if dl := await self.state.pls.give(request):
+            logger.info(f"Queued mix: {request.url}")
+            return LiquidsoapUri(dl.path, {"mode": self.name})
 
-            logger.warning(f"Failed to download mix: {request.name}")
-
-
-ydl_opts = {
-    "quiet": True,
-    "ignoreerrors": True,
-    "extract_flat": "in_playlist",
-}
+        logger.warning(f"Failed to download mix: {request.name}")
 
 
 async def get_video_ids(playlist_id: str) -> list[str]:
@@ -85,3 +72,10 @@ async def get_video_ids(playlist_id: str) -> list[str]:
             return []
 
     return await asyncio.to_thread(run)
+
+
+ydl_opts = {
+    "quiet": True,
+    "ignoreerrors": True,
+    "extract_flat": "in_playlist",
+}

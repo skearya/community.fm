@@ -47,7 +47,7 @@
 		});
 	});
 
-	let showInfo = $state(false);
+	let showInfo = $state(true);
 
 	let title = $derived(
 		s.type === 'ready' ? `${s.data.metadata?.title} - ${s.data.metadata?.artist}` : s.type

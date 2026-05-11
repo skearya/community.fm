@@ -2,6 +2,7 @@ import random
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from models import LiquidsoapUri
 from modes.mode import RadioMode
 
 if TYPE_CHECKING:
@@ -11,21 +12,19 @@ AUDIO_EXT = {".3gp", ".aa", ".aac", ".aax", ".act", ".aiff", ".alac", ".amr", ".
 
 
 class LocalSongsMode(RadioMode):
-    def name(self) -> str:
-        return "Local Songs"
-
     def __init__(self, state: State):
-        self.state = state
+        super().__init__("Local Songs", state)
+
         self.songs: list[Path] = []
 
     async def setup(self) -> None:
         return
 
-    async def next(self) -> str:
+    async def next(self) -> LiquidsoapUri:
         if not self.songs:
             self.reload()
 
-        return str(self.songs.pop())
+        return LiquidsoapUri(str(self.songs.pop()), {"mode": self.name})
 
     def reload(self):
         music = Path(self.state.config.LOCAL_MUSIC_DIRECTORY)

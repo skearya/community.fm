@@ -2,8 +2,6 @@ from dataclasses import dataclass
 
 from pls import Request
 
-NO_NEXT = "NO_NEXT"
-
 
 @dataclass
 class LikedSongEntry:
@@ -30,3 +28,17 @@ class LiquidsoapMetadata:
     coverart: str | None = None
     cover: str | None = None
     user: str | None = None
+    mode: str | None = None
+
+
+@dataclass
+class LiquidsoapUri:
+    file: str
+    metadata: dict[str, str]
+
+    def __str__(self) -> str:
+        return (
+            f"annotate:{','.join(f'{k}="{v}"' for k, v in self.metadata.items())}:{self.file}"
+            if self.metadata
+            else self.file
+        )

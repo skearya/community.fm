@@ -58,9 +58,9 @@ class Stream(commands.Cog):
         self, _interaction: discord.Interaction, current: str
     ) -> list[app_commands.Choice[str]]:
         return [
-            app_commands.Choice(name=mode.name(), value=mode.name())
+            app_commands.Choice(name=mode.name, value=mode.name)
             for mode in self.bot.state.modes
-            if current in mode.name()
+            if current in mode.name
         ]
 
     @app_commands.command(description="Get or set the current radio mode.")
@@ -69,13 +69,11 @@ class Stream(commands.Cog):
     async def mode(self, interaction: Interaction, name: str | None):
         if name is None:
             await interaction.response.send_message(
-                f"Currently in the '{self.bot.state.mode.name()}' mode."
+                f"Currently in the '{self.bot.state.mode.name}' mode."
             )
             return
 
-        match = next(
-            (mode for mode in self.bot.state.modes if mode.name() == name), None
-        )
+        match = next((mode for mode in self.bot.state.modes if mode.name == name), None)
 
         if mode := match:
             self.bot.state.mode = mode

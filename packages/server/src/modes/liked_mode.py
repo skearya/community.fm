@@ -1,10 +1,10 @@
 import asyncio
-import random
 from asyncio import Task
+import random
 from typing import TYPE_CHECKING
 
 from loguru import logger
-from models import NO_NEXT
+from models import LiquidsoapUri
 from modes.mode import RadioMode
 
 if TYPE_CHECKING:
@@ -12,39 +12,34 @@ if TYPE_CHECKING:
 
 
 class LikedSongsMode(RadioMode):
-    def name(self) -> str:
-        return "Liked Songs"
-
     def __init__(self, state: State):
-        self.state = state
-        self.task: Task[str] | None = None
+        super().__init__("Liked Songs", state)
 
     async def setup(self) -> None:
         return
 
-    async def next(self) -> str:
+    async def next(self) -> LiquidsoapUri | None:
         match self.task:
             case Task() if self.task.done():
                 dl, self.task = self.task.result(), None
                 return dl
             case Task():
-                return NO_NEXT
+                return None
             case None:
                 self.task = asyncio.create_task(self.fetch())
-                return NO_NEXT
+                return None
 
-    async def fetch(self) -> str:
-        while True:
-            if not self.state.liked:
-                logger.info("No liked songs have been loaded.")
-                return NO_NEXT
+    async def fetch(self) -> LiquidsoapUri | None:
+        if not self.state.liked:
+            logger.info("No liked songs have been loaded.")
+            return None
 
-            user_id = random.choice(list(self.state.liked.keys()))
-            entry = self.state.liked[user_id]
-            song = random.choice(entry.songs)
+        user_id = random.choice(list(self.state.liked.keys()))
+        entry = self.state.liked[user_id]
+        song = random.choice(entry.songs)
 
-            if dl := await self.state.pls.give(song):
-                logger.info(f"Serving liked song from {entry.username}: {dl.path}")
-                return f'annotate:user="{entry.username}":{dl.path}'
+        if dl := await self.state.pls.give(song):
+            logger.info(f"Serving liked song from {entry.username}: {dl.path}")
+            return LiquidsoapUri(dl.path, {"user": entry.username, "mode": self.name})
 
-            logger.info(f"Failed to download liked song: {song}")
+        logger.info(f"Failed to download liked song: {song}")

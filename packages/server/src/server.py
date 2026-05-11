@@ -15,12 +15,17 @@ STATE_KEY = web.AppKey("STATE_KEY", State)
 public = web.RouteTableDef()
 internal = web.RouteTableDef()
 
+NO_NEXT = "NO_NEXT"
+
 
 @internal.get("/next")
 async def handle_next(request: web.Request) -> web.Response:
     state = request.app[STATE_KEY]
 
-    return web.Response(text=await state.mode.next())
+    if next := await state.mode.next():
+        return web.Response(text=str(next))
+
+    return web.Response(text=NO_NEXT)
 
 
 @internal.post("/metadata")
@@ -58,7 +63,7 @@ async def handle_get_subscribe(request: web.Request) -> web.StreamResponse:
                 "metadata": asdict(state.metadata.value)
                 if state.metadata.value
                 else None,
-                "modes": [mode.name() for mode in state.modes],
+                "modes": [mode.name for mode in state.modes],
             }
 
             await resp.send(json.dumps(info))
