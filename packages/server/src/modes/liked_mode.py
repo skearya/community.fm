@@ -36,12 +36,17 @@ class LikedSongsMode(RadioMode):
             logger.info("No liked songs have been loaded.")
             return None
 
-        user_id = random.choice(list(self.state.liked.keys()))
-        entry = self.state.liked[user_id]
-        song = random.choice(entry.songs)
+        for entry in self.state.liked.values():
+            if entry.username == "nyakkin":
+                song = random.choice(entry.songs)
 
-        if dl := await self.state.pls.give(song):
-            logger.info(f"Serving liked song from {entry.username}: {dl.path}")
-            return LiquidsoapUri(dl.path, {"user": entry.username, "mode": self.name})
+                if dl := await self.state.pls.give(song):
+                    logger.info(f"Serving liked song from {entry.username}: {dl.path}")
 
-        logger.info(f"Failed to download liked song: {song}")
+                    return LiquidsoapUri(
+                        dl.path, {"user": entry.username, "mode": self.name}
+                    )
+
+                logger.info(f"Failed to download liked song: {song}")
+
+        return None
