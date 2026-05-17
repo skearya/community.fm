@@ -25,6 +25,7 @@ class StreamripPls:
         self.config = Config(DEFAULT_CONFIG_PATH)
 
         self.config.session.downloads.folder = downloads_folder
+        self.config.session.artwork.save_artwork = False
         self.config.session.cli.text_output = False
         self.config.session.cli.progress_bars = False
 
