@@ -32,9 +32,7 @@ class State:
 
         self.mode = random.choice(self.modes)
         self.session = aiohttp.ClientSession()
-        self.pls = Pls(
-            self.config.PLS_DATABASE_FILEPATH, self.config.PLS_DOWNLOAD_DIRECTORY
-        )
+        self.pls = Pls(self.config.PLS_DOWNLOAD_DIRECTORY)
 
         self.liked: dict[int, LikedSongEntry] = {}
         self.metadata: Subscribable[LiquidsoapMetadata] = Subscribable()

@@ -33,7 +33,7 @@ data = """"Track URI","Track Name","Artist URI(s)","Artist Name(s)","Album URI",
 
 
 async def main():
-    pls = Pls(os.path.join(os.getcwd(), "tracks.db"), os.getcwd())
+    pls = Pls(os.getcwd())
 
     await pls.login()
 
