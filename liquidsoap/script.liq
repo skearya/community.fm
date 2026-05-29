@@ -8,23 +8,63 @@ settings.encoder.metadata.export :=
 log.file.path := "/tmp/radio.log"
 log.stdout := true
 
+def asset(title, uri, ~mode="") =
+  single(
+    if
+      mode == ""
+    then
+      'annotate:title="#{title}",artist="community.fm":#{uri}'
+    else
+      'annotate:title="#{title}",artist="community.fm",mode="#{mode}":#{uri}'
+    end
+  )
+end
+
 # Assets
-oops = single("/etc/liquidsoap/assets/oops.mp3")
-loading = single("/etc/liquidsoap/assets/loading.mp3")
-radio_intro = single("/etc/liquidsoap/assets/radio-intro.mp3")
-stream_intro = single("/etc/liquidsoap/assets/stream-intro.mp3")
+fatal_error_sound =
+  asset("Error", "/etc/liquidsoap/assets/fatal-error.mp3", mode="Error")
+
+stream_intro_sound =
+  asset(
+    "Starting Stream",
+    "/etc/liquidsoap/assets/stream-intro.mp3"
+  )
+
+radio_intro_sound =
+  asset(
+    "Starting Radio",
+    "/etc/liquidsoap/assets/radio-intro.mp3"
+  )
+
+loading_sound =
+  asset("Loading", "/etc/liquidsoap/assets/loading.mp3", mode="Loading")
 
 def next() =
   uri = http.get("#{BASE_URL}/next")
 
-  if uri != "NO_NEXT" then request.create(uri) else null end
+  if uri == "LOADING" then null else request.create(uri) end
 end
 
 # Build the feed from the server
-feed = request.dynamic(retry_delay=5.0, next)
+feed =
+  request.dynamic(
+    retry_delay=5.0,
+    fun () ->
+      begin
+        uri = http.get("#{BASE_URL}/next")
 
-# Use special loading sound when server returns "NO_NEXT"
-feed = fallback(track_sensitive=false, [feed, loading])
+        if uri == "LOADING" then null else request.create(uri) end
+      end
+  )
+
+# Use special loading sound when server returns "LOADING"
+feed =
+  fallback(
+    track_sensitive=false,
+    transition_length=5.0,
+    transitions=[cross.simple, cross.simple],
+    [feed, loading_sound]
+  )
 
 # Skip blanks longer than 3 seconds
 radio = blank.skip(max_blank=3.0, feed)
@@ -44,21 +84,24 @@ live =
     max=10.00
   )
 
+# Add mode = "Stream" metadata to live mix
+live = metadata.map(fun (_) -> begin [("mode", "Stream")] end, live)
+
 def to_live(a, b) =
-  add(normalize=false, [fade.in(b), once(stream_intro), fade.out(a)])
+  add(normalize=false, [cross.simple(a, b), once(stream_intro_sound)])
 end
 
 def to_radio(a, b) =
-  add(normalize=false, [fade.in(b), once(radio_intro), fade.out(a)])
+  add(normalize=false, [cross.simple(a, b), once(radio_intro_sound)])
 end
 
-# Use live input if exists, otherwise play feed, or oops
+# Use live input if exists, otherwise play feed, or fatal error sound
 radio =
   fallback(
     track_sensitive=false,
     transition_length=5.0,
     transitions=[to_live, to_radio],
-    [live, radio, oops]
+    [live, radio, fatal_error_sound]
   )
 
 # Stream it out in OGG and MP3

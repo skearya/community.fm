@@ -2,7 +2,7 @@ import asyncio
 import json
 from collections.abc import Iterable
 from dataclasses import asdict
-from typing import Literal, TypedDict, Any
+from typing import Any, Literal, TypedDict
 
 from aiohttp import ClientConnectionResetError, web
 from aiohttp_sse import sse_response
@@ -15,17 +15,14 @@ STATE_KEY = web.AppKey("STATE_KEY", State)
 public = web.RouteTableDef()
 internal = web.RouteTableDef()
 
-NO_NEXT = "NO_NEXT"
-
 
 @internal.get("/next")
 async def handle_next(request: web.Request) -> web.Response:
     state = request.app[STATE_KEY]
 
-    if next := await state.mode.next():
-        return web.Response(text=str(next))
+    next = state.manager.next()
 
-    return web.Response(text=NO_NEXT)
+    return web.Response(text=next)
 
 
 @internal.post("/metadata")
@@ -74,7 +71,7 @@ async def handle_get_subscribe(request: web.Request) -> web.StreamResponse:
                 if state.metadata.value
                 else None,
                 "status": asdict(state.status.value) if state.status.value else None,
-                "modes": [mode.name for mode in state.modes],
+                "modes": [mode.name for mode in state.manager.modes],
             }
 
             await resp.send(json.dumps(info))
@@ -85,6 +82,7 @@ async def handle_get_subscribe(request: web.Request) -> web.StreamResponse:
                 while True:
                     payload = asdict(await queue.get())
                     message = {"type": message_type, message_type: payload}
+
                     async with send_lock:
                         await resp.send(json.dumps(message))
 
@@ -92,7 +90,6 @@ async def handle_get_subscribe(request: web.Request) -> web.StreamResponse:
                 forward(metadata_queue, "metadata"),
                 forward(status_queue, "status"),
             )
-
     except ClientConnectionResetError:
         pass
     except Exception:

@@ -1,3 +1,4 @@
+from loguru import logger
 import random
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -20,18 +21,18 @@ class LocalSongsMode(RadioMode):
     async def setup(self) -> None:
         return
 
-    async def next(self) -> LiquidsoapUri:
+    async def next(self) -> LiquidsoapUri | None:
         if not self.songs:
             self.reload()
 
-        return LiquidsoapUri(str(self.songs.pop()), {"mode": self.name})
+            if not self.songs:
+                logger.error(f"{self.state.config.LOCAL_MUSIC_DIRECTORY} empty")
+                return None
+
+        return LiquidsoapUri(str(self.songs.pop()), {})
 
     def reload(self):
         music = Path(self.state.config.LOCAL_MUSIC_DIRECTORY)
 
         self.songs = [file for file in music.rglob("*") if file.suffix in AUDIO_EXT]
-
-        if not self.songs:
-            raise Exception("/music should contain audio files")
-
         random.shuffle(self.songs)

@@ -24,9 +24,7 @@ class CustomBot(commands.Bot):
         await self.load_extension("ext.stream")
         await self.load_extension("ext.liked")
 
-        if self.state.config.DISCORD_TEST_GUILD:
-            await self.load_extension("ext.sync")
-        else:
+        if self.state.config.PROD:
             await self.tree.sync()
 
     async def on_ready(self):

@@ -57,9 +57,11 @@ class Stream(commands.Cog):
     async def mode_autocomplete(
         self, _interaction: discord.Interaction, current: str
     ) -> list[app_commands.Choice[str]]:
+        manager = self.bot.state.manager
+
         return [
             app_commands.Choice(name=mode.name, value=mode.name)
-            for mode in self.bot.state.modes
+            for mode in manager.modes
             if current in mode.name
         ]
 
@@ -67,16 +69,15 @@ class Stream(commands.Cog):
     @app_commands.autocomplete(name=mode_autocomplete)
     @app_commands.guild_only()
     async def mode(self, interaction: Interaction, name: str | None):
+        manager = self.bot.state.manager
+
         if name is None:
             await interaction.response.send_message(
-                f"Currently in the '{self.bot.state.mode.name}' mode."
+                f"Currently in the '{manager.mode.name}' mode."
             )
             return
 
-        match = next((mode for mode in self.bot.state.modes if mode.name == name), None)
-
-        if mode := match:
-            self.bot.state.mode = mode
+        if await manager.switch(name):
             await interaction.response.send_message(f"Set mode to {name}.")
         else:
             await interaction.response.send_message(
