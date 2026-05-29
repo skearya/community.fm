@@ -71,6 +71,7 @@ class LiquidsoapMetadata:
 class LiquidsoapUri:
     file: str
     metadata: dict[str, str]
+    deletable: bool
 
     def __str__(self) -> str:
         return (

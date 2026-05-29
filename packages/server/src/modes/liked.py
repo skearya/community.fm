@@ -28,6 +28,6 @@ class LikedSongsMode(RadioMode):
         logger.debug(f"Fetching liked song: {song}")
 
         if dl := await self.state.pls.give(song):
-            return LiquidsoapUri(dl.path, {"user": entry.username})
+            return LiquidsoapUri(dl.path, {"user": entry.username}, True)
 
         logger.warning(f"Failed to download liked song: {song}")

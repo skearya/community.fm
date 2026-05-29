@@ -39,7 +39,7 @@ class YoutubeMode(RadioMode):
         logger.debug(f"Fetching video: {request.url}")
 
         if dl := await self.state.pls.give(request):
-            return LiquidsoapUri(dl.path, {})
+            return LiquidsoapUri(dl.path, {}, True)
 
         logger.warning(f"Failed to download video: {request.name}")
 

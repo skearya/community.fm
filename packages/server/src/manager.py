@@ -1,8 +1,11 @@
 import asyncio
 import random
+from collections import deque
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from loguru import logger
+from models import LiquidsoapUri
 from modes.liked import LikedSongsMode
 from modes.local import LocalSongsMode
 from modes.mode import RadioMode
@@ -12,6 +15,7 @@ if TYPE_CHECKING:
     from state import State
 
 RETRIES_BEFORE_MODE_SWITCH = 3
+DOWNLOADS_BEFORE_DELETION = 3
 
 
 class Request:
@@ -47,6 +51,7 @@ class ModeManager:
 
         self.mode = random.choice(self.modes)
         self.request: Request | None = None
+        self.history: deque[LiquidsoapUri] = deque()
 
     async def setup(self) -> None:
         for mode in self.modes:
@@ -82,6 +87,7 @@ class ModeManager:
                     logger.info(f"Serving {dl.file} from '{self.request.mode.name}'")
 
                     dl.metadata["mode"] = self.request.mode.name
+                    self.record_and_cleanup(dl)
                     self.request = None
 
                     return str(dl)
@@ -107,3 +113,12 @@ class ModeManager:
                 self.request = Request(self.mode)
 
                 return "LOADING"
+
+    def record_and_cleanup(self, dl: LiquidsoapUri):
+        self.history.append(dl)
+
+        if len(self.history) > DOWNLOADS_BEFORE_DELETION:
+            old = self.history.popleft()
+
+            if old.deletable:
+                Path(old.file).unlink(missing_ok=True)

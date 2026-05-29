@@ -95,7 +95,10 @@ class LikedSongs(commands.Cog):
                     for row in reader
                 ]
 
-            if all(attr in reader.fieldnames for attr in ["Title", "Video url", "Channel name"]):
+            if all(
+                attr in reader.fieldnames
+                for attr in ["Title", "Video url", "Channel name"]
+            ):
                 return [
                     Request(
                         url=row["Video url"],

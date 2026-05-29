@@ -29,7 +29,7 @@ class LocalSongsMode(RadioMode):
                 logger.error(f"{self.state.config.LOCAL_MUSIC_DIRECTORY} empty")
                 return None
 
-        return LiquidsoapUri(str(self.songs.pop()), {})
+        return LiquidsoapUri(str(self.songs.pop()), {}, False)
 
     def reload(self):
         music = Path(self.state.config.LOCAL_MUSIC_DIRECTORY)
