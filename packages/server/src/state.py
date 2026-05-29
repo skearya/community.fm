@@ -1,4 +1,5 @@
 import asyncio
+from collections import deque
 
 import aiohttp
 from config import Config
@@ -7,6 +8,8 @@ from manager import ModeManager
 from models import IcecastStatus, LikedSongEntry, LiquidsoapMetadata
 from pls import Pls
 from utils import Subscribable
+
+MAX_METADATA_HISTORY = 64
 
 
 class State:
@@ -17,8 +20,11 @@ class State:
         self.pls = Pls(self.config.PLS_DOWNLOAD_DIRECTORY)
 
         self.liked: dict[int, LikedSongEntry] = {}
-        self.metadata: Subscribable[LiquidsoapMetadata] = Subscribable()
         self.status: Subscribable[IcecastStatus] = Subscribable()
+        self.metadata: Subscribable[LiquidsoapMetadata] = Subscribable()
+        self.metadata_history: deque[tuple[LiquidsoapMetadata, int | float]] = deque(
+            maxlen=MAX_METADATA_HISTORY
+        )
 
         self.tasks: set[asyncio.Task] = {asyncio.create_task(poll_icecast(self))}
 

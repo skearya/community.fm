@@ -126,6 +126,36 @@ class Stream(commands.Cog):
 
         await interaction.response.send_message(embed=embed)
 
+    @app_commands.command(
+        name="recently-played", description="See recently played tracks from the radio."
+    )
+    @app_commands.guild_only()
+    async def recently_played(self, interaction: Interaction):
+        lines: list[str] = []
+
+        for metadata, time in self.bot.state.metadata_history:
+            details = " • ".join(
+                filter(
+                    None,
+                    [
+                        f"<t:{int(time)}:t>",
+                        metadata.album and f"*{metadata.album}*",
+                        metadata.user and f"*{metadata.user}*",
+                    ],
+                )
+            )
+
+            lines.append(
+                f"**{metadata.title or 'Unknown'}** by {metadata.artist or 'Unknown'}\n"
+                f"-# {details}",
+            )
+
+        embed = discord.Embed(
+            title="Recently played", description="\n".join(lines) or "..."
+        )
+
+        await interaction.response.send_message(embed=embed)
+
     @app_commands.command(description="Skip the currently playing song on the radio.")
     @app_commands.guild_only()
     async def skip(self, interaction: Interaction):

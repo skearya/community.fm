@@ -1,5 +1,6 @@
 import asyncio
 import json
+import time
 from collections.abc import Iterable
 from dataclasses import asdict
 from typing import Any, Literal, TypedDict
@@ -30,7 +31,9 @@ async def handle_update_metadata(request: web.Request) -> web.Response:
     state = request.app[STATE_KEY]
 
     metadata = LiquidsoapMetadata(**await request.json())
+
     state.metadata.update(metadata)
+    state.metadata_history.append((metadata, time.time()))
 
     logger.info(f"Received metadata update: {metadata.title}")
     return web.Response(status=200)
@@ -93,7 +96,7 @@ async def handle_get_subscribe(request: web.Request) -> web.StreamResponse:
     except ClientConnectionResetError:
         pass
     except Exception:
-        logger.exception("Metadata SSE failed?")
+        logger.exception("Subscribe SSE failed?")
 
     return resp
 
