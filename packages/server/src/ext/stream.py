@@ -1,3 +1,4 @@
+import pls
 import asyncio
 import base64
 import re
@@ -82,6 +83,29 @@ class Stream(commands.Cog):
         else:
             await interaction.response.send_message(
                 f"I couldn't find a mode with the name '{name}'."
+            )
+
+    @app_commands.command(description="Queue a song onto the radio.")
+    @app_commands.guild_only()
+    async def queue(
+        self,
+        interaction: Interaction,
+        url: str | None,
+        isrc: str | None,
+        name: str | None,
+        artist: str | None,
+    ):
+        manager = self.bot.state.manager
+
+        manager.queue.items.append(
+            pls.Request(url=url, isrc=isrc, name=name, artist=artist)
+        )
+
+        if manager.mode is manager.queue:
+            await interaction.response.send_message("Added to queue.")
+        else:
+            await interaction.response.send_message(
+                "Added to queue. To play from the queue, set the mode to 'Request Queue' using `/mode`."
             )
 
     @app_commands.command(
