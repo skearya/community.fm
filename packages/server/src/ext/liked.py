@@ -6,7 +6,7 @@ from discord import Attachment, Message, utils
 from discord.ext import commands
 from loguru import logger
 from models import LikedSongEntry
-from pls import Request
+from pls import Track
 
 LIKED_SONGS_CHANNEL = "liked-songs"
 CSV_CONTENT_TYPE = "text/csv"
@@ -38,7 +38,7 @@ class LikedSongs(commands.Cog):
             return
 
         if self.find_csv(message) is None:
-            return  # don't reply to messages without csvs
+            return
 
         if songs := await self._extract_songs(message):
             self.update_songs(author.id, author.name, songs)
@@ -49,10 +49,10 @@ class LikedSongs(commands.Cog):
                 "Invalid CSV. Please use https://exportify.app/ or https://export-youtube-playlist.vercel.app/"
             )
 
-    def update_songs(self, user_id: int, username: str, songs: list[Request]) -> None:
+    def update_songs(self, user_id: int, username: str, songs: list[Track]) -> None:
         self.bot.state.liked[user_id] = LikedSongEntry(username, songs)
 
-    async def _extract_songs(self, message: Message) -> list[Request] | None:
+    async def _extract_songs(self, message: Message) -> list[Track] | None:
         """Find, fetch, and parse a CSV from a message."""
         if attachment := self.find_csv(message):
             csv_text = await self._fetch_csv(attachment)
@@ -75,7 +75,7 @@ class LikedSongs(commands.Cog):
             response.raise_for_status()
             return await response.text()
 
-    def parse_csv(self, csv_text: str) -> list[Request] | None:
+    def parse_csv(self, csv_text: str) -> list[Track] | None:
         try:
             reader = csv.DictReader(StringIO(csv_text))
             if reader.fieldnames is None:
@@ -86,10 +86,11 @@ class LikedSongs(commands.Cog):
                 for attr in ["Track Name", "Artist Name(s)", "ISRC"]
             ):
                 return [
-                    Request(
+                    Track(
+                        id=None,
                         url=None,
                         isrc=row["ISRC"],
-                        name=row["Track Name"],
+                        title=row["Track Name"],
                         artist=row["Artist Name(s)"],
                     )
                     for row in reader
@@ -100,10 +101,11 @@ class LikedSongs(commands.Cog):
                 for attr in ["Title", "Video url", "Channel name"]
             ):
                 return [
-                    Request(
+                    Track(
+                        id=None,
                         url=row["Video url"],
                         isrc=None,
-                        name=row["Title"],
+                        title=row["Title"],
                         artist=row["Channel name"],
                     )
                     for row in reader

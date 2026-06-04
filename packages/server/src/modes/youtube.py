@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from loguru import logger
 from models import LiquidsoapUri
 from modes.mode import RadioMode
-from pls import Request
+from pls import Track
 from yt_dlp import YoutubeDL
 
 if TYPE_CHECKING:
@@ -17,15 +17,17 @@ class YoutubeMode(RadioMode):
         super().__init__("YouTube Playlist", state)
 
         self.playlist_id = playlist_id
-        self.playlist: list[Request] = []
-        self.order: list[Request] = []
+        self.playlist: list[Track] = []
+        self.order: list[Track] = []
 
     async def setup(self) -> None:
         logger.info(f"Getting YouTube videos from playlist {self.playlist_id}...")
         ids = await get_video_ids(self.playlist_id)
-
-        self.playlist = [Request(url=i, isrc=None, name=None, artist=None) for i in ids]
         logger.info(f"Got {len(ids)} YouTube video(s).")
+
+        self.playlist = [
+            Track(id=None, url=id, isrc=None, title=None, artist=None) for id in ids
+        ]
 
     async def next(self) -> LiquidsoapUri | None:
         if not self.playlist:
@@ -35,13 +37,13 @@ class YoutubeMode(RadioMode):
             self.order = self.playlist.copy()
             random.shuffle(self.order)
 
-        request = self.order.pop()
-        logger.debug(f"Fetching video: {request.url}")
+        track = self.order.pop()
+        logger.debug(f"Fetching video: {track.url}")
 
-        if dl := await self.state.pls.give(request):
+        if dl := await self.state.pls.give(track):
             return LiquidsoapUri(dl.path, {}, True)
 
-        logger.warning(f"Failed to download video: {request.name}")
+        logger.warning(f"Failed to download video: {track.url}")
 
 
 async def get_video_ids(playlist_id: str) -> list[str]:

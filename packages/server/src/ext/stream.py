@@ -1,8 +1,9 @@
-import pls
 import asyncio
 import base64
+import hashlib
+import json
 import re
-from dataclasses import fields
+from dataclasses import asdict, fields
 from io import BytesIO
 
 import discord
@@ -10,12 +11,14 @@ from bot import CustomBot
 from discord import Interaction, Member, app_commands
 from discord.ext import commands
 from loguru import logger
+from pls import Album, MediaType, Playlist, Summary, Track
 
 
 class Stream(commands.Cog):
     def __init__(self, bot: CustomBot):
         self.bot = bot
         self.status_task = asyncio.create_task(self.status_updater())
+        self.autocomplete_to_summary: dict[str, Summary] = {}
 
     @app_commands.command(description="Start playing the radio in the VC you're in.")
     @app_commands.guild_only()
@@ -85,28 +88,110 @@ class Stream(commands.Cog):
                 f"I couldn't find a mode with the name '{name}'."
             )
 
-    @app_commands.command(description="Queue a song onto the radio.")
+    async def queue_autocomplete(
+        self, interaction: discord.Interaction, current: str
+    ) -> list[app_commands.Choice[str]]:
+        pls = self.bot.state.pls
+
+        if not interaction.namespace.type or not current:
+            return []
+
+        results = await pls.search(
+            title=None, artist=None, query=current, type=interaction.namespace.type
+        )
+
+        choices: list[app_commands.Choice] = []
+
+        for summary in results[:25]:
+            string = json.dumps(asdict(summary), sort_keys=True)
+            hash = hashlib.md5(string.encode("utf-8")).hexdigest()
+
+            self.autocomplete_to_summary[hash] = summary
+
+            name = f"{summary.id[0].capitalize()} | {summary.artist} - {summary.title}"
+            value = hash
+
+            choices.append(app_commands.Choice(name=name[:100], value=value))
+
+        return choices
+
+    @app_commands.command(
+        name="queue-search",
+        description="Queue a song onto the radio through searching.",
+    )
+    @app_commands.describe(
+        type="track or album or playlist",
+        query="'artist' - 'title' recommended",
+    )
+    @app_commands.autocomplete(query=queue_autocomplete)
     @app_commands.guild_only()
     async def queue(
         self,
         interaction: Interaction,
-        url: str | None,
-        isrc: str | None,
-        name: str | None,
-        artist: str | None,
+        type: MediaType,
+        query: str,
     ):
+        pls = self.bot.state.pls
         manager = self.bot.state.manager
 
-        manager.queue.items.append(
-            pls.Request(url=url, isrc=isrc, name=name, artist=artist)
-        )
+        summary = self.autocomplete_to_summary.get(query)
 
-        if manager.mode is manager.queue:
-            await interaction.response.send_message("Added to queue.")
-        else:
+        if summary is None:
             await interaction.response.send_message(
-                "Added to queue. To play from the queue, set the mode to 'Request Queue' using `/mode`."
+                "Please use the autocomplete menu to select an option.", ephemeral=True
             )
+            return
+
+        media = await pls.info(*summary.id, summary.type)
+
+        if media is None:
+            await interaction.response.send_message(
+                f"I failed to fetch needed metadata for {summary.title} by {summary.artist} from {summary.id}, please try another service."
+            )
+            return
+
+        embed = discord.Embed()
+
+        match media:
+            case Track():
+                embed.title = "Track added"
+                embed.description = (
+                    f"{media.artist} - {media.title} ({': '.join([*summary.id])})"
+                )
+
+                manager.queue.items.append(media)
+            case Album():
+                embed.title = "Album added"
+                embed.description = "\n".join(
+                    [
+                        f"{media.artist} - {media.title} ({': '.join([*summary.id])})",
+                        *[track.title or "Unknown" for track in media.items],
+                    ]
+                )
+
+                if media.cover:
+                    embed.set_thumbnail(url=media.cover)
+
+                manager.queue.items.extend(media.items)
+            case Playlist():
+                embed.title = "Playlist added"
+                embed.description = "\n".join(
+                    [
+                        f"{media.title} ({': '.join([*summary.id])})",
+                        *[track.title or "Unknown" for track in media.items],
+                    ]
+                )
+
+                manager.queue.items.extend(media.items)
+
+        await interaction.response.send_message(embed=embed)
+
+        # if manager.mode is manager.queue:
+        #     await interaction.response.send_message("Added to queue.")
+        # else:
+        #     await interaction.response.send_message(
+        #         "Added to queue. To play from the queue, set the mode to 'Request Queue' using `/mode`."
+        #     )
 
     @app_commands.command(
         name="now-playing", description="Get the currently playing song on the radio."

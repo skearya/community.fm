@@ -1,12 +1,12 @@
 from dataclasses import dataclass, field
 
-from pls import Request
+from pls import Track
 
 
 @dataclass
 class LikedSongEntry:
     username: str
-    songs: list[Request]
+    songs: list[Track]
 
 
 @dataclass

@@ -6,8 +6,7 @@ from io import StringIO
 
 import rich
 from loguru import logger
-from pls.core import Pls
-from pls.utils import Request
+from pls import Pls, Track
 
 logger.remove()
 
@@ -38,7 +37,14 @@ async def main():
     await pls.login()
 
     for row in csv.DictReader(StringIO(data)):
-        request = Request(None, row["ISRC"], row["Track Name"], row["Artist Name(s)"])
+        request = Track(
+            id=None,
+            url=None,
+            isrc=row["ISRC"],
+            title=row["Track Name"],
+            artist=row["Artist Name(s)"],
+        )
+
         rich.print(await pls.give(request))
 
     await pls.logout()

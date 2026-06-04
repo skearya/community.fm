@@ -1,24 +1,21 @@
-from dataclasses import dataclass
-
 from rapidfuzz import fuzz
+from rapidfuzz.utils import default_process
 
 
-@dataclass(frozen=True)
-class Request:
-    url: str | None
-    isrc: str | None
-    name: str | None
-    artist: str | None
+def similarity(
+    one: str, two: str, three: str | None = None, four: str | None = None
+) -> float:
+    if three and four:
+        title, title2, artist, artist2 = one, two, three, four
 
+        title_similarity = fuzz.token_set_ratio(
+            default_process(title), default_process(title2)
+        )
 
-@dataclass(frozen=True)
-class Download:
-    source: str
-    path: str
+        artist_similarity = fuzz.token_set_ratio(
+            default_process(artist), default_process(artist2)
+        )
 
+        return title_similarity * 0.4 + artist_similarity * 0.6
 
-def similarity(name0: str, name1: str, artist0: str, artist1: str) -> float:
-    name_similarity = fuzz.token_set_ratio(name0, name1)
-    artist_similarity = fuzz.token_set_ratio(artist0, artist1)
-
-    return name_similarity * 0.4 + artist_similarity * 0.6
+    return fuzz.token_set_ratio(default_process(one), default_process(two))
