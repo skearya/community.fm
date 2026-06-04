@@ -186,6 +186,11 @@ class Stream(commands.Cog):
 
         await interaction.response.send_message(embed=embed)
 
+        if manager.mode is manager.queue:
+            return
+
+        await manager.switch(manager.queue.name)
+
         # if manager.mode is manager.queue:
         #     await interaction.response.send_message("Added to queue.")
         # else:

@@ -22,12 +22,13 @@ class YoutubeMode(RadioMode):
 
     async def setup(self) -> None:
         logger.info(f"Getting YouTube videos from playlist {self.playlist_id}...")
-        ids = await get_video_ids(self.playlist_id)
-        logger.info(f"Got {len(ids)} YouTube video(s).")
 
         self.playlist = [
-            Track(id=None, url=id, isrc=None, title=None, artist=None) for id in ids
+            Track(id=None, url=id, isrc=None, title=None, artist=None)
+            for id in await get_video_ids(self.playlist_id)
         ]
+
+        logger.info(f"Got {len(self.playlist)} YouTube video(s).")
 
     async def next(self) -> LiquidsoapUri | None:
         if not self.playlist:

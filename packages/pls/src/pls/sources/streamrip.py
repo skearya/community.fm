@@ -196,19 +196,39 @@ class StreamripPls:
         return await self.resolve(pending)
 
     async def isrc(self, logger: Logger, isrc: str) -> Download | None:
+        async def fetch(client: Client) -> Download | None:
+            if isinstance(client, QobuzClient):
+                pages = await client.search("track", isrc)
+                search = RipSearchResults.from_pages("qobuz", "track", pages)
+
+                if not search.results:
+                    return None
+
+                idd = search.results[0].id
+            elif isinstance(client, TidalClient):
+                result = await client._api_request(
+                    "/tracks", {"filter[isrc]": isrc}, "https://openapi.tidal.com/v2"
+                )
+
+                if not result["data"]:
+                    return None
+
+                idd = result["data"][0]["id"]
+            elif isinstance(client, DeezerClient):
+                try:
+                    result = client.client.api.get_track_by_ISRC(isrc)
+                except DataException:
+                    return None
+
+                idd = result["id"]
+            elif isinstance(client, SoundcloudClient):
+                return None
+
+            return await self.resolve(PendingSingle(idd, client, self.config, self.db))
+
         for client in self.active_clients():
             try:
-                match client:
-                    case QobuzClient():
-                        dl = await self.qobuz_isrc(client, isrc)
-                    case TidalClient():
-                        dl = await self.tidal_isrc(client, isrc)
-                    case DeezerClient():
-                        dl = await self.deezer_isrc(client, isrc)
-                    case SoundcloudClient():
-                        continue
-
-                if dl is not None:
+                if dl := await fetch(client):
                     return dl
 
                 logger.debug(f"{client.source} missing ISRC, checking next")
@@ -216,39 +236,6 @@ class StreamripPls:
                 logger.exception(f"{client.source} exception")
 
         return None
-
-    async def qobuz_isrc(self, qobuz: QobuzClient, isrc: str) -> Download | None:
-        pages = await qobuz.search("track", isrc)
-        search = RipSearchResults.from_pages("qobuz", "track", pages)
-
-        if not search.results:
-            return None
-
-        return await self.resolve(
-            PendingSingle(search.results[0].id, qobuz, self.config, self.db)
-        )
-
-    async def tidal_isrc(self, tidal: TidalClient, isrc: str) -> Download | None:
-        result = await tidal._api_request(
-            "/tracks", {"filter[isrc]": isrc}, "https://openapi.tidal.com/v2"
-        )
-
-        if not result["data"]:
-            return None
-
-        return await self.resolve(
-            PendingSingle(result["data"][0]["id"], tidal, self.config, self.db)
-        )
-
-    async def deezer_isrc(self, deezer: DeezerClient, isrc: str) -> Download | None:
-        try:
-            result = deezer.client.api.get_track_by_ISRC(isrc)
-        except DataException:
-            return None
-
-        return await self.resolve(
-            PendingSingle(result["id"], deezer, self.config, self.db)
-        )
 
     async def resolve(self, item: PendingSingle | PendingTrack) -> Download:
         track = await item.resolve()
@@ -264,10 +251,7 @@ class StreamripPls:
         return (c for c in self.clients.values() if c.logged_in)
 
     def client(self, source: str) -> Client | None:
-        return next(
-            (c for c in self.clients.values() if c.source == source and c.logged_in),
-            None,
-        )
+        return next((c for c in self.active_clients() if c.source == source), None)
 
 
 def streamrip_search_summaries(search: RipSearchResults, source: str) -> list[Summary]:

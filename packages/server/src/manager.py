@@ -65,8 +65,8 @@ class ModeManager:
         if match is None:
             return False
 
-        logger.info(f"Mode manually switched from '{self.mode.name}' to '{match.name}'")
-        self.mode = match
+        old, self.mode = self.mode, match
+        logger.info(f"Mode switched from '{old.name}' to '{match.name}'")
 
         if self.request is not None:
             self.request.task.cancel()
@@ -77,6 +77,11 @@ class ModeManager:
                 pass
 
             self.request = Request(self.mode)
+
+        async with self.state.session.post(
+            f"{self.state.config.LIQUIDSOAP_BASE_URL}/clear"
+        ) as response:
+            response.raise_for_status()
 
         return True
 
