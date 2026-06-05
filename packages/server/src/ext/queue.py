@@ -4,6 +4,7 @@ from dataclasses import asdict
 
 import discord
 from bot import CustomBot
+from cachetools import LRUCache
 from discord import Interaction, app_commands
 from discord.ext import commands
 from pls import Album, Media, MediaType, Playlist, Summary, Track
@@ -12,7 +13,7 @@ from pls import Album, Media, MediaType, Playlist, Summary, Track
 class Queue(commands.Cog):
     def __init__(self, bot: CustomBot):
         self.bot = bot
-        self.autocomplete_to_summary: dict[str, Summary] = {}
+        self.summaries: LRUCache[str, Summary] = LRUCache(maxsize=512)
 
     @app_commands.command(
         name="queue-url", description="Queue a song onto the radio from a URL."
@@ -59,7 +60,7 @@ class Queue(commands.Cog):
             string = json.dumps(asdict(summary), sort_keys=True)
             hash = hashlib.md5(string.encode("utf-8")).hexdigest()
 
-            self.autocomplete_to_summary[hash] = summary
+            self.summaries[hash] = summary
 
             name = f"{summary.id[0]} | {summary.artist} - {summary.title}"
             value = hash
@@ -98,7 +99,7 @@ class Queue(commands.Cog):
 
         pls = self.bot.state.pls
 
-        summary = self.autocomplete_to_summary.get(query) or await pls.best(
+        summary = self.summaries.get(query) or await pls.best(
             query, type, [service] if service else None
         )
 
