@@ -80,9 +80,9 @@ class Pls:
         type: MediaType,
         services: list[str] | None = None,
     ) -> list[Summary]:
-        query = f"{query[0]} - {query[1]}" if isinstance(query, tuple) else query
+        text = f"{query[0]} - {query[1]}" if isinstance(query, tuple) else query
 
-        results = await self.streamrip.search(query, type, services)
+        results = await self.streamrip.search(text, type, services)
 
         ranked = [
             ((rank(result, query), preference), result)
