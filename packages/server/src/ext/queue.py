@@ -135,7 +135,7 @@ class Queue(commands.Cog):
                 embed.url = media.url
 
             manager.queue.items.append((username, media))
-        if isinstance(media, Album | Playlist):
+        elif isinstance(media, Album | Playlist):
             embed.title = "Album queued"
             embed.description = (
                 f"### {media.title} by {media.artist}\n"
