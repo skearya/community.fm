@@ -97,7 +97,7 @@ class YoutubePls:
 
                     return track(info)
             except Exception:
-                logger.error(f"youtube failed to get info on id: {id}")
+                logger.error(f"youtube failed to get info on query: {query}")
                 return None
 
         return await asyncio.to_thread(run)
