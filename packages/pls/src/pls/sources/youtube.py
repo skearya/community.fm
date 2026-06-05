@@ -1,8 +1,8 @@
 import asyncio
 from typing import TYPE_CHECKING
 
-import yt_dlp
-from pls.utils import Download
+from loguru import logger
+from pls.models import Download, Media, Playlist, Track
 from yt_dlp import YoutubeDL
 
 if TYPE_CHECKING:
@@ -30,15 +30,26 @@ class YoutubePls:
     async def logout(self):
         pass
 
-    async def url(self, logger: Logger, url: str) -> Download | None:
-        extractors = yt_dlp.extractor.gen_extractors()
+    async def url(self, url: str) -> Media | None:
+        if any(
+            other in url
+            for other in ["qobuz", "tidal", "deezer", "soundcloud", "spotify"]
+        ):
+            return None
 
-        for e in extractors:
-            if e.suitable(url) and e.IE_NAME != "generic":
-                return await self.resolve(logger, url)
+        return await self.extract(url)
 
-        logger.info("Failed to parse URL with YouTube")
-        return None
+    async def info(self, source: str, id: str) -> Media | None:
+        if source != "youtube":
+            return None
+
+        return await self.extract(id)
+
+    async def id(self, logger: Logger, source: str, id: str) -> Download | None:
+        if source != "youtube":
+            return None
+
+        return await self.resolve(logger, id)
 
     async def isrc(self, logger: Logger, isrc: str) -> Download | None:
         return await self.resolve(logger, f"ytsearch1:{isrc}")
@@ -53,10 +64,40 @@ class YoutubePls:
                         info = info["entries"][0]
 
                     return Download(
-                        "YouTube", info["requested_downloads"][0]["filepath"]
+                        "youtube", info["requested_downloads"][0]["filepath"]
                     )
             except Exception:
-                logger.debug("YouTube missing ISRC or failed to DL")
+                logger.warning("youtube missing ISRC or failed to DL")
+                return None
+
+        return await asyncio.to_thread(run)
+
+    async def extract(self, query: str) -> Media | None:
+        def track(entry: dict) -> Track:
+            return Track(
+                id=("youtube", entry["id"]),
+                url=entry.get("url"),
+                isrc=None,
+                title=entry.get("title"),
+                artist=entry.get("channel"),
+            )
+
+        info_ydl_opts = {"quiet": True, "skip_download": True, "extract_flat": True}
+
+        def run() -> Media | None:
+            try:
+                with YoutubeDL(info_ydl_opts) as ydl:
+                    info = ydl.extract_info(query, download=False)
+
+                    if "entries" in info:
+                        return Playlist(
+                            title=info["title"],
+                            items=[track(entry) for entry in info["entries"]],
+                        )
+
+                    return track(info)
+            except Exception:
+                logger.error(f"youtube failed to get info on query: {query}")
                 return None
 
         return await asyncio.to_thread(run)

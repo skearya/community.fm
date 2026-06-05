@@ -19,7 +19,7 @@ class LocalSongsMode(RadioMode):
         self.songs: list[Path] = []
 
     async def setup(self) -> None:
-        return
+        pass
 
     async def next(self) -> LiquidsoapUri | None:
         if not self.songs:

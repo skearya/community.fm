@@ -1,8 +1,18 @@
+import asyncio
 from typing import TYPE_CHECKING, Iterator
 
 from deezer.errors import DataException
 from loguru import logger
-from pls.utils import Download, similarity
+from pls.models import (
+    Album,
+    Download,
+    Media,
+    MediaType,
+    Playlist,
+    SearchResult,
+    Summary,
+    Track,
+)
 from streamrip.client import (
     Client,
     DeezerClient,
@@ -12,8 +22,19 @@ from streamrip.client import (
 )
 from streamrip.config import DEFAULT_CONFIG_PATH, Config
 from streamrip.db import Database, Dummy
-from streamrip.media import PendingSingle
-from streamrip.metadata import SearchResults, TrackSummary
+from streamrip.media import (
+    PendingAlbum,
+    PendingPlaylist,
+    PendingSingle,
+    PendingTrack,
+)
+from streamrip.metadata import AlbumMetadata as RipAlbumMetadata
+from streamrip.metadata import AlbumSummary as RipAlbumSummary
+from streamrip.metadata import PlaylistMetadata as RipPlaylistMetadata
+from streamrip.metadata import PlaylistSummary as RipPlaylistSummary
+from streamrip.metadata import SearchResults as RipSearchResults
+from streamrip.metadata import TrackMetadata as RipTrackMetadata
+from streamrip.metadata import TrackSummary as RipTrackSummary
 from streamrip.rip.parse_url import parse_url
 
 if TYPE_CHECKING:
@@ -29,16 +50,13 @@ class StreamripPls:
         self.config.session.cli.text_output = False
         self.config.session.cli.progress_bars = False
 
-        self.db = Database(
-            downloads=Dummy(),
-            failed=Dummy(),
-        )
+        self.db = Database(downloads=Dummy(), failed=Dummy())
 
         self.clients = {
-            "Qobuz": QobuzClient(self.config),
-            "Tidal": TidalClient(self.config),
-            "Deezer": DeezerClient(self.config),
-            "SoundCloud": SoundcloudClient(self.config),
+            "qobuz": QobuzClient(self.config),
+            "tidal": TidalClient(self.config),
+            "deezer": DeezerClient(self.config),
+            "soundcloud": SoundcloudClient(self.config),
         }
 
     async def login(self) -> StreamripPls:
@@ -55,136 +73,242 @@ class StreamripPls:
             if hasattr(client, "session"):
                 await client.session.close()
 
-    async def url(self, logger: Logger, url: str) -> Download | None:
+    def services(self) -> list[str]:
+        return [client.source for client in self.active_clients()]
+
+    async def url(self, url: str) -> Media | None:
         parsed = parse_url(url)
 
         if parsed is None:
-            logger.debug("Failed to parse URL with Streamrip")
             return None
 
-        client = self.clients[parsed.source]
+        client = self.client(parsed.source)
+
+        if client is None:
+            return None
+
         pending = await parsed.into_pending(client, self.config, self.db)
 
-        if not isinstance(pending, PendingSingle):
-            logger.warning("URL pointed to something other than a single")
+        if isinstance(pending, PendingSingle | PendingTrack):
+            type = "track"
+        elif isinstance(pending, PendingAlbum):
+            type = "album"
+        elif isinstance(pending, PendingPlaylist):
+            type = "playlist"
+        else:
             return None
 
-        return await self.resolve(client, pending)
+        return await self.info(client.source, pending.id, type)
 
-    async def isrc(self, logger: Logger, isrc: str) -> Download | None:
-        for source, client in self.active_clients():
+    async def search(
+        self,
+        query: str,
+        type: MediaType,
+        services: list[str] | None,
+    ) -> list[SearchResult]:
+        services = services or [
+            next(
+                (c.source for c in self.active_clients() if c.source == "deezer"),
+                next((c.source for c in self.active_clients())),
+            ),
+        ]
+
+        async def searcher(i: int, client: Client) -> list[SearchResult]:
+            service_type = (
+                "playlist"
+                if client.source == "soundcloud" and type == "album"
+                else type
+            )
+
+            pages = await client.search(service_type, query)
+            search = RipSearchResults.from_pages(client.source, service_type, pages)
+
+            summaries = streamrip_search_summaries(search, client.source)
+
+            return [(-i, summary) for summary in summaries]
+
+        tasks = await asyncio.gather(
+            *[
+                searcher(i, client)
+                for i, client in enumerate(self.active_clients())
+                if client.source in services
+            ],
+            return_exceptions=True,
+        )
+
+        results: list[SearchResult] = []
+
+        for result in tasks:
+            if isinstance(result, BaseException):
+                logger.error(f"Search error: {result}")
+            else:
+                results.extend(result)
+
+        return results
+
+    async def info(self, source: str, id: str, type: MediaType) -> Media | None:
+        client = self.client(source)
+
+        if client is None:
+            return None
+
+        if type == "track" and (
+            (resp := await client.get_metadata(id, "track"))
+            and (album := RipAlbumMetadata.from_track_resp(resp, client.source))
+            and (meta := RipTrackMetadata.from_resp(album, client.source, resp))
+        ):
+            return Track(
+                id=(client.source, id),
+                url=None,
+                isrc=meta.isrc,
+                title=meta.title,
+                artist=meta.artist,
+            )
+        elif type == "album" and (
+            (resp := await client.get_metadata(id, "album"))
+            and (album := RipAlbumMetadata.from_album_resp(resp, client.source))
+        ):
+            # HACK: Streamrip doesn't have a standardized way to read the tracks
+            # in an album or playlist, so we have to try normalizing that ourselves.
+            items = streamrip_album_or_playlist_tracks(resp, client.source)
+
             try:
-                match client:
-                    case QobuzClient():
-                        dl = await self.qobuz(client, isrc)
-                    case TidalClient():
-                        dl = await self.tidal(client, isrc)
-                    case DeezerClient():
-                        dl = await self.deezer(client, isrc)
-                    case SoundcloudClient():
-                        continue
-
-                if dl is not None:
-                    return dl
-
-                logger.debug(f"{source} missing ISRC, checking next")
+                cover = album.covers.largest()[1]
             except Exception:
-                logger.exception(f"{source} exception")
+                cover = None
+
+            return Album(
+                title=album.album, artist=album.albumartist, cover=cover, items=items
+            )
+        elif type == "playlist" and (
+            (resp := await client.get_metadata(id, "playlist"))
+            and (playlist := RipPlaylistMetadata.from_resp(resp, client.source))
+        ):
+            items = streamrip_album_or_playlist_tracks(resp, client.source)
+
+            return Playlist(title=playlist.name, items=items)
 
         return None
 
-    async def search(self, logger: Logger, artist: str, name: str) -> Download | None:
-        PERFECT_MATCH_THRESHOLD = 99.0
-        MINIMUM_ACCEPTABLE_THRESHOLD = 85.0
+    async def id(
+        self, logger: Logger, source: str, id: str, type: MediaType
+    ) -> Download | None:
+        client = self.client(source)
 
-        # Score: [Similarity (0 - 100), Client preference by index (-i)]
-        type Score = tuple[float, int]
+        if client is None:
+            return None
 
-        similar: list[tuple[Score, TrackSummary, Client]] = []
+        if type == "track":
+            pending = PendingSingle(id, client, self.config, self.db)
+        else:
+            return None
 
-        for i, (source, client) in enumerate(self.active_clients()):
+        return await self.resolve(pending)
+
+    async def isrc(self, logger: Logger, isrc: str) -> Download | None:
+        async def fetch(client: Client) -> Download | None:
+            if isinstance(client, QobuzClient):
+                pages = await client.search("track", isrc)
+                search = RipSearchResults.from_pages("qobuz", "track", pages)
+
+                if not search.results:
+                    return None
+
+                idd = search.results[0].id
+            elif isinstance(client, TidalClient):
+                result = await client._api_request(
+                    "/tracks", {"filter[isrc]": isrc}, "https://openapi.tidal.com/v2"
+                )
+
+                if not result["data"]:
+                    return None
+
+                idd = result["data"][0]["id"]
+            elif isinstance(client, DeezerClient):
+                try:
+                    result = client.client.api.get_track_by_ISRC(isrc)
+                except DataException:
+                    return None
+
+                idd = result["id"]
+            elif isinstance(client, SoundcloudClient):
+                return None
+
+            return await self.resolve(PendingSingle(idd, client, self.config, self.db))
+
+        for client in self.active_clients():
             try:
-                query = f"{artist} - {name}"
-                pages = await client.search("track", query)
-                search = SearchResults.from_pages(client.source, "track", pages)
+                if dl := await fetch(client):
+                    return dl
 
-                if len(search.results) == 0:
-                    logger.debug(f"No results on {source}, checking next")
-                    continue
-
-                for item in search.results:
-                    score = similarity(name, item.name, artist, item.artist)
-
-                    if score >= PERFECT_MATCH_THRESHOLD:
-                        logger.debug(f"Perfect match on {source}")
-                        return await self.resolve(
-                            client, PendingSingle(item.id, client, self.config, self.db)
-                        )
-
-                    similar.append(((score, -i), item, client))
+                logger.debug(f"{client.source} missing ISRC, checking next")
             except Exception:
-                logger.exception(f"{source} exception")
+                logger.exception(f"{client.source} exception")
 
-        if len(similar) == 0:
-            return None
+        return None
 
-        similar.sort(key=lambda track: track[0], reverse=True)
-        score, item, client = similar[0]
-
-        if score[0] < MINIMUM_ACCEPTABLE_THRESHOLD:
-            logger.debug(f"Closest match: {score[0]:.2f}%, giving up")
-            return None
-
-        try:
-            return await self.resolve(
-                client, PendingSingle(item.id, client, self.config, self.db)
-            )
-        except Exception:
-            logger.exception(f"{client.source} exception")
-            return None
-
-    async def qobuz(self, qobuz: QobuzClient, isrc: str) -> Download | None:
-        pages = await qobuz.search("track", isrc)
-        search = SearchResults.from_pages("qobuz", "track", pages)
-
-        if len(search.results) == 0:
-            return None
-
-        return await self.resolve(
-            qobuz, PendingSingle(search.results[0].id, qobuz, self.config, self.db)
-        )
-
-    async def tidal(self, tidal: TidalClient, isrc: str) -> Download | None:
-        result = await tidal._api_request(
-            "/tracks", {"filter[isrc]": isrc}, "https://openapi.tidal.com/v2"
-        )
-
-        if len(result["data"]) == 0:
-            return None
-
-        return await self.resolve(
-            tidal, PendingSingle(result["data"][0]["id"], tidal, self.config, self.db)
-        )
-
-    async def deezer(self, deezer: DeezerClient, isrc: str) -> Download | None:
-        try:
-            result = deezer.client.api.get_track_by_ISRC(isrc)
-        except DataException:
-            return None
-
-        return await self.resolve(
-            deezer, PendingSingle(result["id"], deezer, self.config, self.db)
-        )
-
-    async def resolve(self, client: Client, single: PendingSingle) -> Download:
-        track = await single.resolve()
+    async def resolve(self, item: PendingSingle | PendingTrack) -> Download:
+        track = await item.resolve()
 
         if track is None:
-            raise Exception(f"{client.source} resolve failed")
+            raise Exception(f"{item.client.source} resolve failed")
 
         await track.rip()
 
-        return Download(client.source.capitalize(), track.download_path)
+        return Download(item.client.source, track.download_path)
 
-    def active_clients(self) -> Iterator[tuple[str, Client]]:
-        return ((k, v) for k, v in self.clients.items() if v.logged_in)
+    def active_clients(self) -> Iterator[Client]:
+        return (c for c in self.clients.values() if c.logged_in)
+
+    def client(self, source: str) -> Client | None:
+        return next((c for c in self.active_clients() if c.source == source), None)
+
+
+def streamrip_search_summaries(search: RipSearchResults, source: str) -> list[Summary]:
+    normalized: list[Summary] = []
+
+    for item in search.results:
+        id = (source, item.id)
+
+        if isinstance(item, RipTrackSummary):
+            summary = Summary(id=id, type="track", title=item.name, artist=item.artist)
+        elif isinstance(item, RipAlbumSummary):
+            summary = Summary(id=id, type="album", title=item.name, artist=item.artist)
+        elif isinstance(item, RipPlaylistSummary):
+            summary = Summary(
+                id=id, type="playlist", title=item.name, artist=item.creator
+            )
+        else:
+            raise NotImplementedError
+
+        normalized.append(summary)
+
+    return normalized
+
+
+def streamrip_album_or_playlist_tracks(resp: dict, source: str) -> list[Track]:
+    tracklist = resp["tracks"]["items"] if source == "qobuz" else resp["tracks"]
+
+    normalized: list[Track] = []
+
+    for track in tracklist:
+        if source == "qobuz":
+            artist = (track.get("performer") or track.get("composer"))["name"]
+        elif source == "deezer" or source == "tidal":
+            artist = track["artist"]["name"]
+        elif source == "soundcloud":
+            artist = track["user"]["username"]
+        else:
+            raise NotImplementedError
+
+        normalized.append(
+            Track(
+                id=(source, track["id"]),
+                url=None,
+                isrc=track.get("isrc"),
+                title=track["title"],
+                artist=artist,
+            )
+        )
+
+    return normalized

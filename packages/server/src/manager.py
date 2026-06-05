@@ -9,6 +9,7 @@ from models import LiquidsoapUri
 from modes.liked import LikedSongsMode
 from modes.local import LocalSongsMode
 from modes.mode import RadioMode
+from modes.queue import RequestQueueMode
 from modes.youtube import YoutubeMode
 
 if TYPE_CHECKING:
@@ -36,10 +37,11 @@ class Request:
 class ModeManager:
     def __init__(self, state: State):
         self.state = state
-
+        self.queue = RequestQueueMode(state)
         self.modes: list[RadioMode] = [
             LocalSongsMode(state),
             LikedSongsMode(state),
+            self.queue,
         ]
 
         if state.config.YOUTUBE_PLAYLIST_ID:
@@ -49,7 +51,7 @@ class ModeManager:
                 "YOUTUBE_PLAYLIST_ID environment variable unset, disabling YouTube mix mode"
             )
 
-        self.mode = random.choice(self.modes)
+        self.mode = random.choice([m for m in self.modes if m is not self.queue])
         self.request: Request | None = None
         self.history: deque[LiquidsoapUri] = deque()
 
@@ -58,13 +60,13 @@ class ModeManager:
             await mode.setup()
 
     async def switch(self, name: str) -> bool:
-        match = next((mode for mode in self.modes if mode.name == name), None)
+        match = next((m for m in self.modes if m.name == name), None)
 
         if match is None:
             return False
 
-        logger.info(f"Mode manually switched from '{self.mode.name}' to '{match.name}'")
-        self.mode = match
+        old, self.mode = self.mode, match
+        logger.info(f"Mode switched from '{old.name}' to '{match.name}'")
 
         if self.request is not None:
             self.request.task.cancel()
@@ -75,6 +77,11 @@ class ModeManager:
                 pass
 
             self.request = Request(self.mode)
+
+        async with self.state.session.post(
+            f"{self.state.config.LIQUIDSOAP_BASE_URL}/clear"
+        ) as response:
+            response.raise_for_status()
 
         return True
 
@@ -87,8 +94,15 @@ class ModeManager:
                     logger.info(f"Serving {dl.file} from '{self.request.mode.name}'")
 
                     dl.metadata["mode"] = self.request.mode.name
-                    self.record_and_cleanup(dl)
                     self.request = None
+
+                    self.history.append(dl)
+
+                    if len(self.history) > DOWNLOADS_BEFORE_DELETION:
+                        old = self.history.popleft()
+
+                        if old.deletable:
+                            Path(old.file).unlink(missing_ok=True)
 
                     return str(dl)
 
@@ -98,7 +112,7 @@ class ModeManager:
                     )
 
                     logger.warning(
-                        f"Mode '{self.request.mode.name}' consistently failed, trying {mode.name}"
+                        f"Mode '{self.request.mode.name}' consistently failed, trying '{mode.name}'"
                     )
 
                     self.mode = mode
@@ -113,12 +127,3 @@ class ModeManager:
                 self.request = Request(self.mode)
 
                 return "LOADING"
-
-    def record_and_cleanup(self, dl: LiquidsoapUri):
-        self.history.append(dl)
-
-        if len(self.history) > DOWNLOADS_BEFORE_DELETION:
-            old = self.history.popleft()
-
-            if old.deletable:
-                Path(old.file).unlink(missing_ok=True)
