@@ -14,7 +14,7 @@ class RequestQueueMode(RadioMode):
     def __init__(self, state: State):
         super().__init__("Request Queue", state)
 
-        self.items: deque[Track] = deque()
+        self.items: deque[tuple[str, Track]] = deque()
 
     async def setup(self) -> None:
         pass
@@ -23,11 +23,11 @@ class RequestQueueMode(RadioMode):
         if not self.items:
             return None
 
-        track = self.items.popleft()
+        username, track = self.items.popleft()
 
-        logger.debug(f"Fetching queued track: {track}")
+        logger.debug(f"Fetching queued track from {username}: {track}")
 
         if dl := await self.state.pls.give(track):
-            return LiquidsoapUri(dl.path, {}, True)
+            return LiquidsoapUri(dl.path, {"user": username}, True)
 
         logger.warning(f"Failed to download track: {track}")

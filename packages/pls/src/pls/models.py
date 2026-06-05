@@ -1,13 +1,6 @@
 from dataclasses import dataclass
 from typing import Literal
 
-
-@dataclass(frozen=True)
-class Download:
-    source: str
-    path: str
-
-
 type Media = Track | Album | Playlist
 type MediaType = Literal["track", "album", "playlist"]
 
@@ -42,6 +35,15 @@ class Summary:
     title: str
     artist: str
 
+
+@dataclass()
+class Download:
+    source: str
+    path: str
+
+
+# [artist, name] | query
+type SearchQuery = tuple[str, str] | str
 
 # [Preference (low to high), Summary]
 type SearchResult = tuple[int, Summary]

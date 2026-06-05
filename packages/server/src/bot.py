@@ -21,10 +21,17 @@ class CustomBot(commands.Bot):
         self.state = state
 
     async def setup_hook(self):
-        await self.load_extension("ext.stream")
         await self.load_extension("ext.liked")
+        await self.load_extension("ext.queue")
+        await self.load_extension("ext.stream")
 
         if self.state.config.PROD:
+            if DISCORD_TEST_GUILD := self.state.config.DISCORD_TEST_GUILD:
+                guild = discord.Object(id=DISCORD_TEST_GUILD)
+
+                self.tree.clear_commands(guild=guild)
+                await self.tree.sync(guild=guild)
+
             await self.tree.sync()
 
     async def on_ready(self):

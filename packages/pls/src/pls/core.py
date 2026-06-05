@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 
 from loguru import logger
 
-from pls.models import Download, Media, MediaType, Summary, Track
+from pls.models import Download, Media, MediaType, SearchQuery, Summary, Track
 from pls.sources.streamrip import StreamripPls
 from pls.sources.youtube import YoutubePls
 from pls.utils import similarity
@@ -25,33 +25,30 @@ class Pls:
         await self.streamrip.logout()
         await self.youtube.logout()
 
+    def services(self) -> list[str]:
+        return self.streamrip.services()
+
     async def give(self, track: Track) -> Download | None:
         tlogger = logger.bind(media=track)
 
         if (
             track.url
-            and not (track.id and track.title and track.artist)
+            and not (track.id or track.title or track.artist)
             and (updated := await self.url(track.url))
         ):
             assert isinstance(updated, Track)
             track = updated
 
-        if track.id and (
-            dl := await self.streamrip.id(tlogger, *track.id, "track")
-            or await self.youtube.id(tlogger, *track.id)
-        ):
+        if track.id and (dl := await self.id(tlogger, *track.id, "track")):
             return dl
 
-        if track.isrc and (
-            dl := await self.streamrip.isrc(tlogger, track.isrc)
-            or await self.youtube.isrc(tlogger, track.isrc)
-        ):
+        if track.isrc and (dl := await self.isrc(tlogger, track.isrc)):
             return dl
 
         if (
-            track.title
-            and track.artist
-            and (dl := await self.best(tlogger, track.title, track.artist, "track"))
+            (track.title and track.artist)
+            and (summary := await self.best((track.artist, track.title), "track"))
+            and (dl := await self.id(tlogger, *summary.id, "track"))
         ):
             return dl
 
@@ -65,23 +62,31 @@ class Pls:
             source, id
         )
 
+    async def id(
+        self, logger: Logger, source: str, id: str, type: MediaType
+    ) -> Download | None:
+        return await self.streamrip.id(
+            logger, source, id, type
+        ) or await self.youtube.id(logger, source, id)
+
+    async def isrc(self, logger: Logger, isrc: str) -> Download | None:
+        return await self.streamrip.isrc(logger, isrc) or await self.youtube.isrc(
+            logger, isrc
+        )
+
     async def search(
-        self, title: str | None, artist: str | None, query: str | None, type: MediaType
+        self,
+        query: SearchQuery,
+        type: MediaType,
+        services: list[str] | None = None,
     ) -> list[Summary]:
-        assert (title and artist) or query
+        query = f"{query[0]} - {query[1]}" if isinstance(query, tuple) else query
 
-        results = await self.streamrip.search(logger, title, artist, query, type)
-
-        def rank(summary: Summary) -> int | float:
-            if title and artist:
-                return similarity(title, summary.title, artist, summary.artist)
-            elif query:
-                return similarity(query, f"{summary.artist} - {summary.title}")
-            else:
-                raise Exception()
+        results = await self.streamrip.search(query, type, services)
 
         ranked = [
-            ((rank(result), preference), result) for preference, result in results
+            ((rank(result, query), preference), result)
+            for preference, result in results
         ]
 
         ranked.sort(key=itemgetter(0), reverse=True)
@@ -89,26 +94,28 @@ class Pls:
         return list(map(itemgetter(1), ranked))
 
     async def best(
-        self, logger: Logger, title: str, artist: str, type: MediaType
-    ) -> Download | None:
+        self, query: SearchQuery, type: MediaType, services: list[str] | None = None
+    ) -> Summary | None:
         MINIMUM_ACCEPTABLE_THRESHOLD = 90.0
 
-        results = await self.search(title, artist, None, type)
+        results = await self.search(query, type, services or self.services())
 
         if not results:
             return None
 
         summary = results[0]
-        score = similarity(title, summary.title, artist, summary.artist)
+        score = rank(summary, query)
 
         if score < MINIMUM_ACCEPTABLE_THRESHOLD:
             logger.warning(f"Closest similarity: {score:.2f}%")
             return None
 
-        if summary.id and (
-            dl := await self.streamrip.id(logger, *summary.id, "track")
-            or await self.youtube.id(logger, *summary.id)
-        ):
-            return dl
+        return summary
 
-        return None
+
+def rank(summary: Summary, info: SearchQuery) -> int | float:
+    match info:
+        case [artist, title]:
+            return similarity(title, summary.title, artist, summary.artist)
+        case query:
+            return similarity(query, f"{summary.artist} - {summary.title}")

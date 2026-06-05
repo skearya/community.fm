@@ -73,6 +73,9 @@ class StreamripPls:
             if hasattr(client, "session"):
                 await client.session.close()
 
+    def services(self) -> list[str]:
+        return [client.source for client in self.active_clients()]
+
     async def url(self, url: str) -> Media | None:
         parsed = parse_url(url)
 
@@ -99,13 +102,16 @@ class StreamripPls:
 
     async def search(
         self,
-        logger: Logger,
-        title: str | None,
-        artist: str | None,
-        query: str | None,
+        query: str,
         type: MediaType,
+        services: list[str] | None,
     ) -> list[SearchResult]:
-        query = query or f"{artist} - {title}"
+        services = services or [
+            next(
+                (c.source for c in self.active_clients() if c.source == "deezer"),
+                next((c.source for c in self.active_clients())),
+            ),
+        ]
 
         async def searcher(i: int, client: Client) -> list[SearchResult]:
             service_type = (
@@ -122,7 +128,11 @@ class StreamripPls:
             return [(-i, summary) for summary in summaries]
 
         tasks = await asyncio.gather(
-            *[searcher(i, client) for i, client in enumerate(self.active_clients())],
+            *[
+                searcher(i, client)
+                for i, client in enumerate(self.active_clients())
+                if client.source in services
+            ],
             return_exceptions=True,
         )
 
@@ -283,7 +293,7 @@ def streamrip_album_or_playlist_tracks(resp: dict, source: str) -> list[Track]:
 
     for track in tracklist:
         if source == "qobuz":
-            artist = (track.get("composer") or track.get("performer"))["name"]
+            artist = (track.get("performer") or track.get("composer"))["name"]
         elif source == "deezer" or source == "tidal":
             artist = track["artist"]["name"]
         elif source == "soundcloud":
