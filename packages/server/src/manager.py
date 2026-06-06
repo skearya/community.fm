@@ -88,9 +88,11 @@ class ModeManager:
     def next(self) -> str:
         match self.request:
             case Request() if self.request.task.done():
-                dl = self.request.task.result()
-
-                if dl is not None:
+                if (
+                    not self.request.task.cancelled()
+                    and self.request.task.exception() is None
+                    and (dl := self.request.task.result())
+                ):
                     logger.info(f"Serving {dl.file} from '{self.request.mode.name}'")
 
                     dl.metadata["mode"] = self.request.mode.name
