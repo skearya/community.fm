@@ -5,6 +5,8 @@ from models import IcecastStatus
 if TYPE_CHECKING:
     from state import State
 
+POLL_INTERVAL = 1
+
 
 async def poll_icecast(state: State):
     while True:
@@ -16,4 +18,4 @@ async def poll_icecast(state: State):
             status = IcecastStatus(**data["icestats"])
 
         state.status.update(status)
-        await asyncio.sleep(1)
+        await asyncio.sleep(POLL_INTERVAL)
