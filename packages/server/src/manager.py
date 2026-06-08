@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 from loguru import logger
 from models import LiquidsoapUri
+from modes.lastfm import LastFMMode
 from modes.liked import LikedSongsMode
 from modes.local import LocalSongsMode
 from modes.mode import RadioMode
@@ -41,6 +42,7 @@ class ModeManager:
         self.modes: list[RadioMode] = [
             LocalSongsMode(state),
             LikedSongsMode(state),
+            LastFMMode(state),
             self.queue,
         ]
 

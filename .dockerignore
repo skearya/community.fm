@@ -3,6 +3,7 @@
 !**/README.md
 
 !packages/**/*.py
+!packages/**/*.sql
 !packages/**/pyproject.toml
 !packages/**/.python-version
 !pyproject.toml

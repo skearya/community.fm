@@ -3,7 +3,9 @@ from collections import deque
 
 import aiohttp
 from config import Config
+from db import Db
 from icecast import poll_icecast
+from lastfm import LastFM
 from manager import ModeManager
 from models import IcecastStatus, LikedSongEntry, LiquidsoapMetadata
 from pls import Pls
@@ -16,8 +18,11 @@ class State:
     def __init__(self):
         self.config = Config()
         self.manager = ModeManager(self)
-        self.session = aiohttp.ClientSession()
+        self.db = Db(self)
+
         self.pls = Pls(self.config.PLS_DOWNLOAD_DIRECTORY)
+        self.session = aiohttp.ClientSession()
+        self.lastfm = LastFM(self)
 
         self.liked: dict[int, LikedSongEntry] = {}
         self.status: Subscribable[IcecastStatus] = Subscribable()
@@ -26,13 +31,16 @@ class State:
             maxlen=MAX_METADATA_HISTORY
         )
 
-        self.tasks: set[asyncio.Task] = {asyncio.create_task(poll_icecast(self))}
+        self.tasks = {asyncio.create_task(poll_icecast(self))}
 
     async def __aenter__(self) -> State:
+        await self.db.connect()
         await self.pls.login()
         await self.manager.setup()
+
         return self
 
     async def __aexit__(self, *_):
         await self.session.close()
         await self.pls.logout()
+        await self.db.close()

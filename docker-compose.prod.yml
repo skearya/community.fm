@@ -32,6 +32,8 @@ services:
             - ICECAST_HOSTNAME
             - ICECAST_MAX_CLIENTS
             - ICECAST_MAX_SOURCES
+            - LASTFM_API_KEY
+            - LASTFM_SECRET
         depends_on:
             - community-fm-server
     community-fm-liquidsoap:
