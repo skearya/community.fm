@@ -3,7 +3,7 @@
 BASE_URL = "http://community-fm-server:8081"
 
 settings.encoder.metadata.export :=
-  [...settings.encoder.metadata.export(), "user", "mode"]
+  [...settings.encoder.metadata.export(), "user", "mode", "playcount"]
 
 log.file.path := "/tmp/radio.log"
 log.stdout := true

@@ -1,5 +1,7 @@
 import asyncio
 from typing import TYPE_CHECKING
+
+from loguru import logger
 from models import IcecastStatus
 
 if TYPE_CHECKING:
@@ -15,7 +17,11 @@ async def poll_icecast(state: State):
         ) as response:
             response.raise_for_status()
             data = await response.json()
-            status = IcecastStatus(**data["icestats"])
 
-        state.status.update(status)
+            try:
+                status = IcecastStatus(**data["icestats"])
+                state.status.update(status)
+            except Exception as e:
+                logger.debug(f"Icecast poll error: {e}")
+
         await asyncio.sleep(POLL_INTERVAL)

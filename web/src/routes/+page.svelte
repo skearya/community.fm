@@ -97,6 +97,11 @@
 						{s.data.metadata.user}
 					</div>
 				{/if}
+				{#if s.data.metadata?.playcount}
+					<div class="border border-r-0 border-amber-400 py-1 pr-2 pl-2">
+						Play Count: {s.data.metadata.playcount}
+					</div>
+				{/if}
 				{#if s.data.status}
 					<div class="border border-r-0 border-amber-400 py-1 pr-2 pl-2">
 						Listeners: {getListeners(s.data.status)}

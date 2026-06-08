@@ -1,4 +1,5 @@
 import random
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from db import User
@@ -11,11 +12,20 @@ if TYPE_CHECKING:
     from state import State
 
 
+@dataclass
+class LastFMItem:
+    playcount: int
+    track: Track
+
+
+DECAY_BASE = 0.95
+
+
 class LastFMMode(RadioMode):
     def __init__(self, state: State):
         super().__init__("Last.fm Weekly Top Songs", state)
 
-        self.top: dict[int, list[Track]] = {}
+        self.top: dict[int, list[LastFMItem]] = {}
 
     async def setup(self) -> None:
         pass
@@ -32,24 +42,29 @@ class LastFMMode(RadioMode):
         user = random.choice(users)
 
         if user.id not in self.top:
-            if tracks := await self.fetch_user(user):
-                self.top[user.id] = tracks
+            if items := await self.fetch_user(user):
+                self.top[user.id] = items
             else:
                 return None
 
         if not (songs := self.top[user.id]):
             return None
 
-        song = random.choice(songs)
+        weights = [DECAY_BASE**i for i in range(len(songs))]
+        item = random.choices(songs, weights=weights, k=1)[0]
 
-        logger.debug(f"Fetching Last.fm song: {song}")
+        logger.debug(f"Fetching Last.fm item: {item.track}")
 
-        if dl := await self.state.pls.give(song):
-            return LiquidsoapUri(dl.path, {"user": user.lastfm_username}, True)
+        if dl := await self.state.pls.give(item.track):
+            return LiquidsoapUri(
+                dl.path,
+                {"user": user.lastfm_username, "playcount": str(item.playcount)},
+                True,
+            )
 
-        logger.warning(f"Failed to download Last.fm song: {song}")
+        logger.warning(f"Failed to download Last.fm item: {item}")
 
-    async def fetch_user(self, user: User) -> list[Track] | None:
+    async def fetch_user(self, user: User) -> list[LastFMItem] | None:
         lastfm = self.state.lastfm
 
         gettoptracks = await lastfm.api(
@@ -65,12 +80,15 @@ class LastFMMode(RadioMode):
             return None
 
         return [
-            Track(
-                id=None,
-                url=None,
-                isrc=None,
-                title=track["name"],
-                artist=track["artist"]["name"],
+            LastFMItem(
+                playcount=track["playcount"],
+                track=Track(
+                    id=None,
+                    url=None,
+                    isrc=None,
+                    title=track["name"],
+                    artist=track["artist"]["name"],
+                ),
             )
             for track in gettoptracks["toptracks"]["track"]
         ]

@@ -65,6 +65,7 @@ class LiquidsoapMetadata:
     cover: str | None = None
     user: str | None = None
     mode: str | None = None
+    playcount: str | None = None
 
 
 @dataclass

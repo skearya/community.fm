@@ -51,4 +51,5 @@ export type LiquidsoapMetadata = Partial<{
 	cover: string;
 	user: string;
 	mode: string;
+	playcount: string;
 }>;
