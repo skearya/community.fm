@@ -1,5 +1,5 @@
 import asyncio
-from typing import TYPE_CHECKING, Iterator
+from typing import Iterator
 
 from deezer.errors import DataException
 from loguru import logger
@@ -37,9 +37,6 @@ from streamrip.metadata import TrackMetadata as RipTrackMetadata
 from streamrip.metadata import TrackSummary as RipTrackSummary
 from streamrip.rip.parse_url import parse_url
 
-if TYPE_CHECKING:
-    from loguru import Logger
-
 
 class StreamripPls:
     def __init__(self, downloads_folder: str):
@@ -58,6 +55,9 @@ class StreamripPls:
             "deezer": DeezerClient(self.config),
             "soundcloud": SoundcloudClient(self.config),
         }
+
+    async def name(self) -> str:
+        return "streamrip"
 
     async def login(self) -> StreamripPls:
         for source, client in self.clients.items():
@@ -140,7 +140,7 @@ class StreamripPls:
 
         for result in tasks:
             if isinstance(result, BaseException):
-                logger.error(f"Search error: {result}")
+                logger.error(f"Streamrip search: {result}")
             else:
                 results.extend(result)
 
@@ -190,9 +190,7 @@ class StreamripPls:
 
         return None
 
-    async def id(
-        self, logger: Logger, source: str, id: str, type: MediaType
-    ) -> Download | None:
+    async def id(self, source: str, id: str, type: MediaType) -> Download | None:
         client = self.client(source)
 
         if client is None:
@@ -205,7 +203,7 @@ class StreamripPls:
 
         return await self.resolve(pending)
 
-    async def isrc(self, logger: Logger, isrc: str) -> Download | None:
+    async def isrc(self, isrc: str) -> Download | None:
         async def fetch(client: Client) -> Download | None:
             if isinstance(client, QobuzClient):
                 pages = await client.search("track", isrc)

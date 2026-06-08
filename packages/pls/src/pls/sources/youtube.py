@@ -1,12 +1,8 @@
 import asyncio
-from typing import TYPE_CHECKING
 
 from loguru import logger
-from pls.models import Download, Media, Playlist, Track
+from pls.models import Download, Media, MediaType, Playlist, Track
 from yt_dlp import YoutubeDL
-
-if TYPE_CHECKING:
-    from loguru import Logger
 
 
 class YoutubePls:
@@ -24,6 +20,9 @@ class YoutubePls:
             ],
         }
 
+    async def name(self) -> str:
+        return "yt-dlp"
+
     async def login(self):
         pass
 
@@ -39,22 +38,22 @@ class YoutubePls:
 
         return await self.extract(url)
 
-    async def info(self, source: str, id: str) -> Media | None:
+    async def info(self, source: str, id: str, type: MediaType) -> Media | None:
         if source != "youtube":
             return None
 
         return await self.extract(id)
 
-    async def id(self, logger: Logger, source: str, id: str) -> Download | None:
+    async def id(self, source: str, id: str, type: MediaType) -> Download | None:
         if source != "youtube":
             return None
 
-        return await self.resolve(logger, id)
+        return await self.resolve(id)
 
-    async def isrc(self, logger: Logger, isrc: str) -> Download | None:
-        return await self.resolve(logger, f"ytsearch1:{isrc}")
+    async def isrc(self, isrc: str) -> Download | None:
+        return await self.resolve(f"ytsearch1:{isrc}")
 
-    async def resolve(self, logger: Logger, query: str) -> Download | None:
+    async def resolve(self, query: str) -> Download | None:
         def run() -> Download | None:
             try:
                 with YoutubeDL(self.ydl_opts) as ydl:

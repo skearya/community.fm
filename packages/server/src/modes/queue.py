@@ -30,4 +30,4 @@ class RequestQueueMode(RadioMode):
         if dl := await self.state.pls.give(track):
             return LiquidsoapUri(dl.path, {"user": username}, True)
 
-        logger.warning(f"Failed to download track: {track}")
+        logger.warning(f"Failed to download queued track: {track}")

@@ -1,15 +1,18 @@
 from operator import itemgetter
-from typing import TYPE_CHECKING
 
 from loguru import logger
 
-from pls.models import Download, Media, MediaType, SearchQuery, Summary, Track
+from pls.models import (
+    Download,
+    Media,
+    MediaType,
+    SearchQuery,
+    Summary,
+    Track,
+)
 from pls.sources.streamrip import StreamripPls
 from pls.sources.youtube import YoutubePls
 from pls.utils import similarity
-
-if TYPE_CHECKING:
-    from loguru import Logger
 
 
 class Pls:
@@ -29,8 +32,6 @@ class Pls:
         return self.streamrip.services()
 
     async def give(self, track: Track) -> Download | None:
-        tlogger = logger.bind(media=track)
-
         if (
             track.url
             and not (track.id or track.title or track.artist)
@@ -39,40 +40,56 @@ class Pls:
             assert isinstance(updated, Track)
             track = updated
 
-        if track.id and (dl := await self.id(tlogger, *track.id, "track")):
+        if track.id and (dl := await self.id(*track.id, "track")):
             return dl
 
-        if track.isrc and (dl := await self.isrc(tlogger, track.isrc)):
+        if track.isrc and (dl := await self.isrc(track.isrc)):
             return dl
 
         if (
             (track.title and track.artist)
             and (summary := await self.best((track.artist, track.title), "track"))
-            and (dl := await self.id(tlogger, *summary.id, "track"))
+            and (dl := await self.id(*summary.id, "track"))
         ):
             return dl
 
         return None
 
     async def url(self, url: str) -> Media | None:
-        return await self.streamrip.url(url) or await self.youtube.url(url)
+        for pls in [self.streamrip, self.youtube]:
+            try:
+                return await pls.url(url)
+            except Exception:
+                logger.exception(f"{pls.name()} url")
+
+        return None
 
     async def info(self, source: str, id: str, type: MediaType) -> Media | None:
-        return await self.streamrip.info(source, id, type) or await self.youtube.info(
-            source, id
-        )
+        for pls in [self.streamrip, self.youtube]:
+            try:
+                return await pls.info(source, id, type)
+            except Exception:
+                logger.exception(f"{pls.name()} info")
 
-    async def id(
-        self, logger: Logger, source: str, id: str, type: MediaType
-    ) -> Download | None:
-        return await self.streamrip.id(
-            logger, source, id, type
-        ) or await self.youtube.id(logger, source, id)
+        return None
 
-    async def isrc(self, logger: Logger, isrc: str) -> Download | None:
-        return await self.streamrip.isrc(logger, isrc) or await self.youtube.isrc(
-            logger, isrc
-        )
+    async def id(self, source: str, id: str, type: MediaType) -> Download | None:
+        for pls in [self.streamrip, self.youtube]:
+            try:
+                return await pls.id(source, id, type)
+            except Exception:
+                logger.exception(f"{pls.name()} id")
+
+        return None
+
+    async def isrc(self, isrc: str) -> Download | None:
+        for pls in [self.streamrip, self.youtube]:
+            try:
+                return await pls.isrc(isrc)
+            except Exception:
+                logger.exception(f"{pls.name()} isrc")
+
+        return None
 
     async def search(
         self,
@@ -82,7 +99,11 @@ class Pls:
     ) -> list[Summary]:
         text = f"{query[0]} - {query[1]}" if isinstance(query, tuple) else query
 
-        results = await self.streamrip.search(text, type, services)
+        try:
+            results = await self.streamrip.search(text, type, services)
+        except Exception:
+            logger.exception("streamrip search")
+            return []
 
         ranked = [
             ((rank(result, query), preference), result)

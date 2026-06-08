@@ -133,7 +133,7 @@ class Stream(commands.Cog):
     async def recently_played(self, interaction: Interaction):
         lines: list[str] = []
 
-        for metadata, time in self.bot.state.metadata_history:
+        for metadata, time in self.bot.state.history:
             details = " • ".join(
                 filter(
                     None,
@@ -178,8 +178,8 @@ class Stream(commands.Cog):
 
                 try:
                     await self.bot.change_presence(activity=activity)
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.error(f"Discord status error: {e}")
 
 
 async def setup(bot: CustomBot):

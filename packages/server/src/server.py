@@ -33,7 +33,7 @@ async def handle_update_metadata(request: web.Request) -> web.Response:
     metadata = LiquidsoapMetadata(**await request.json())
 
     state.metadata.update(metadata)
-    state.metadata_history.append((metadata, time.time()))
+    state.history.append((metadata, time.time()))
 
     logger.info(f"Received metadata update: {metadata.title}")
     return web.Response(status=200)
@@ -42,19 +42,19 @@ async def handle_update_metadata(request: web.Request) -> web.Response:
 class InfoMessage(TypedDict):
     type: Literal["info"]
     stream: str
-    metadata: dict[str, str | None] | None
-    status: dict[str, Any | None] | None
+    metadata: dict[str, Any] | None
+    status: object | None
     modes: list[str]
 
 
 class MetadataMessage(TypedDict):
     type: Literal["metadata"]
-    metadata: dict[str, str | None]
+    metadata: dict[str, Any]
 
 
 class StatusMessage(TypedDict):
     type: Literal["status"]
-    status: dict[str, Any | None]
+    status: object
 
 
 @public.get("/api/subscribe")
@@ -73,7 +73,7 @@ async def handle_get_subscribe(request: web.Request) -> web.StreamResponse:
                 "metadata": asdict(state.metadata.value)
                 if state.metadata.value
                 else None,
-                "status": asdict(state.status.value) if state.status.value else None,
+                "status": state.status.value,
                 "modes": [mode.name for mode in state.manager.modes],
             }
 
@@ -81,17 +81,17 @@ async def handle_get_subscribe(request: web.Request) -> web.StreamResponse:
 
             send_lock = asyncio.Lock()
 
-            async def forward(queue: asyncio.Queue, message_type: str):
+            async def forward(queue: asyncio.Queue, type: str, dataclass: bool):
                 while True:
-                    payload = asdict(await queue.get())
-                    message = {"type": message_type, message_type: payload}
+                    data = await queue.get()
+                    message = {"type": type, type: asdict(data) if dataclass else data}
 
                     async with send_lock:
                         await resp.send(json.dumps(message))
 
             await asyncio.gather(
-                forward(metadata_queue, "metadata"),
-                forward(status_queue, "status"),
+                forward(metadata_queue, "metadata", True),
+                forward(status_queue, "status", False),
             )
     except ClientConnectionResetError:
         pass

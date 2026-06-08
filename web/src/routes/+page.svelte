@@ -1,11 +1,11 @@
 <script lang="ts">
-	import type { IcecastStatus, LiquidsoapMetadata } from '$lib/types';
+	import type { LiquidsoapMetadata } from '$lib/types';
 	import { onMount } from 'svelte';
 
 	type Data = {
 		stream: string;
 		metadata: LiquidsoapMetadata | null;
-		status: IcecastStatus | null;
+		status: unknown | null;
 		modes: string[];
 	};
 
@@ -18,7 +18,7 @@
 	type Message =
 		| ({ type: 'info' } & Data)
 		| { type: 'metadata'; metadata: LiquidsoapMetadata }
-		| { type: 'status'; status: IcecastStatus };
+		| { type: 'status'; status: unknown };
 
 	let s = $state<State>({ type: 'awaiting' });
 
@@ -63,8 +63,14 @@
 		s.type === 'ready' ? `${s.data.metadata?.title} - ${s.data.metadata?.artist}` : s.type
 	);
 
-	const getListeners = (status: IcecastStatus) =>
-		status.source?.reduce((acc, s) => acc + (s.listeners ?? 0), 0);
+	const getListeners = (status: unknown) => {
+		try {
+			// @ts-expect-error Icecast doesn't properly document.
+			return status.icestats.source.reduce((acc, s) => acc + s.listeners, 0);
+		} catch {
+			return 0;
+		}
+	};
 </script>
 
 <svelte:head>

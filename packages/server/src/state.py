@@ -7,7 +7,7 @@ from db import Db
 from icecast import poll_icecast
 from lastfm import LastFM
 from manager import ModeManager
-from models import IcecastStatus, LikedSongEntry, LiquidsoapMetadata
+from models import LikedSongEntry, LiquidsoapMetadata
 from pls import Pls
 from utils import Subscribable
 
@@ -25,9 +25,9 @@ class State:
         self.lastfm = LastFM(self)
 
         self.liked: dict[int, LikedSongEntry] = {}
-        self.status: Subscribable[IcecastStatus] = Subscribable()
+        self.status: Subscribable[object] = Subscribable()
         self.metadata: Subscribable[LiquidsoapMetadata] = Subscribable()
-        self.metadata_history: deque[tuple[LiquidsoapMetadata, int | float]] = deque(
+        self.history: deque[tuple[LiquidsoapMetadata, int | float]] = deque(
             maxlen=MAX_METADATA_HISTORY
         )
 

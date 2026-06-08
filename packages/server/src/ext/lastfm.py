@@ -3,6 +3,7 @@ from urllib.parse import urlencode
 from bot import CustomBot
 from discord import ButtonStyle, Interaction, app_commands, ui
 from discord.ext import commands
+from loguru import logger
 
 
 class Login(ui.LayoutView):
@@ -49,9 +50,15 @@ class Confirm(ui.Button):
             else:
                 await db.create_user(interaction.user.id, name, key)
 
+            logger.info(
+                f"Last.fm '{name}' succesfully linked to discord '{interaction.user.name}"
+            )
+
             self.label = "Success!"
             self.style = ButtonStyle.success
         else:
+            logger.error(f"Last.fm failed linking to discord '{interaction.user.name}")
+
             self.label = "Error?"
             self.style = ButtonStyle.danger
 

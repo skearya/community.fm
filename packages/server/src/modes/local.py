@@ -1,8 +1,8 @@
-from loguru import logger
 import random
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from loguru import logger
 from models import LiquidsoapUri
 from modes.mode import RadioMode
 

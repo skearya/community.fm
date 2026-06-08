@@ -62,7 +62,7 @@ class LastFMMode(RadioMode):
                 True,
             )
 
-        logger.warning(f"Failed to download Last.fm item: {item}")
+        logger.warning(f"Failed to download Last.fm item: {item.track}")
 
     async def fetch_user(self, user: User) -> list[LastFMItem] | None:
         lastfm = self.state.lastfm
