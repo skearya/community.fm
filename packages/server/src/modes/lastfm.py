@@ -18,7 +18,7 @@ class LastFMItem:
     track: Track
 
 
-DECAY_BASE = 0.95
+DECAY_BASE = 0.99
 
 
 class LastFMMode(RadioMode):
