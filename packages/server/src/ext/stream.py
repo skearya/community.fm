@@ -3,6 +3,7 @@ import base64
 import re
 from dataclasses import fields
 from io import BytesIO
+from itertools import islice
 
 import discord
 from bot import CustomBot
@@ -55,7 +56,7 @@ class Stream(commands.Cog):
         await interaction.response.send_message("Left.")
 
     async def mode_autocomplete(
-        self, _interaction: discord.Interaction, current: str
+        self, _interaction: Interaction, current: str
     ) -> list[app_commands.Choice[str]]:
         manager = self.bot.state.manager
 
@@ -133,7 +134,7 @@ class Stream(commands.Cog):
     async def recently_played(self, interaction: Interaction):
         lines: list[str] = []
 
-        for metadata, time in self.bot.state.history:
+        for metadata, time in islice(self.bot.state.history, 0, 10):
             details = " • ".join(
                 filter(
                     None,

@@ -23,6 +23,7 @@ class CustomBot(commands.Bot):
     async def setup_hook(self):
         await self.load_extension("ext.stream")
         await self.load_extension("ext.queue")
+        await self.load_extension("ext.reload")
         await self.load_extension("ext.liked")
         await self.load_extension("ext.lastfm")
 

@@ -1,6 +1,6 @@
 import random
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from db import User
 from loguru import logger
@@ -12,10 +12,10 @@ if TYPE_CHECKING:
     from state import State
 
 
-@dataclass
+@dataclass()
 class LastFMItem:
-    playcount: int
     track: Track
+    playcount: int
 
 
 DECAY_BASE = 0.99
@@ -25,33 +25,40 @@ class LastFMMode(RadioMode):
     def __init__(self, state: State):
         super().__init__("Last.fm Weekly Top Songs", state)
 
-        self.top: dict[int, list[LastFMItem]] = {}
+        self.top: dict[User, list[LastFMItem]] = {}
+        self.period: Literal[
+            "overall", "7day", "1month", "3month", "6month", "12month"
+        ] = "7day"
 
     async def setup(self) -> None:
-        pass
+        if not (users := await self.state.db.get_users()):
+            logger.info("No Last.fm users exist in the database.")
+            return None
+
+        logger.info(
+            f"Getting Last.fm {self.period} top tracks for {len(users)} user(s)."
+        )
+
+        self.top = {user: await self.gettoptracks(user) for user in users}
+
+        logger.info("Got Last.fm top tracks.")
+
+    async def reload(self) -> None:
+        await self.setup()
 
     async def next(self) -> LiquidsoapUri | None:
-        db = self.state.db
-
-        users = await db.get_users()
-
-        if not users:
-            logger.info("No last.fm users exist in the database.")
+        if not self.top:
+            logger.info("No Last.fm top tracks have been fetched.")
             return None
 
-        user = random.choice(users)
+        user = random.choice(list(self.top.keys()))
 
-        if user.id not in self.top:
-            if items := await self.fetch_user(user):
-                self.top[user.id] = items
-            else:
-                return None
-
-        if not (songs := self.top[user.id]):
+        if not (items := self.top[user]):
+            logger.info("User has no songs in playlist?")
             return None
 
-        weights = [DECAY_BASE**i for i in range(len(songs))]
-        item = random.choices(songs, weights=weights, k=1)[0]
+        weights = [DECAY_BASE**i for i in range(len(items))]
+        item = random.choices(items, weights=weights)[0]
 
         logger.debug(f"Fetching Last.fm item: {item.track}")
 
@@ -64,31 +71,43 @@ class LastFMMode(RadioMode):
 
         logger.warning(f"Failed to download Last.fm item: {item.track}")
 
-    async def fetch_user(self, user: User) -> list[LastFMItem] | None:
-        lastfm = self.state.lastfm
+    async def gettoptracks(self, user: User) -> list[LastFMItem]:
+        items: list[LastFMItem] = []
+        page = 1
 
-        gettoptracks = await lastfm.api(
-            {
-                "method": "user.gettoptracks",
-                "user": user.lastfm_username,
-                "period": "7day",
-                "sk": user.lastfm_session,
-            }
-        )
-
-        if not gettoptracks:
-            return None
-
-        return [
-            LastFMItem(
-                playcount=track["playcount"],
-                track=Track(
-                    id=None,
-                    url=None,
-                    isrc=None,
-                    title=track["name"],
-                    artist=track["artist"]["name"],
-                ),
+        while True:
+            gettoptracks = await self.state.lastfm.api(
+                {
+                    "method": "user.gettoptracks",
+                    "user": user.lastfm_username,
+                    "period": self.period,
+                    "limit": "1000",
+                    "page": str(page),
+                    "sk": user.lastfm_session,
+                }
             )
-            for track in gettoptracks["toptracks"]["track"]
-        ]
+
+            if not gettoptracks:
+                logger.error(f"Failed getting last.fm top tracks for {user.id}")
+                return items
+
+            items.extend(
+                [
+                    LastFMItem(
+                        track=Track(
+                            id=None,
+                            url=None,
+                            isrc=None,
+                            title=track["name"],
+                            artist=track["artist"]["name"],
+                        ),
+                        playcount=int(track["playcount"]),
+                    )
+                    for track in gettoptracks["toptracks"]["track"]
+                ]
+            )
+
+            if page >= int(gettoptracks["toptracks"]["@attr"]["totalPages"]):
+                return items
+
+            page += 1

@@ -17,22 +17,25 @@ class LocalSongsMode(RadioMode):
         super().__init__("Local Songs", state)
 
         self.songs: list[Path] = []
+        self.order: list[Path] = []
 
     async def setup(self) -> None:
-        pass
+        self.songs = [
+            file
+            for file in Path(self.state.config.LOCAL_MUSIC_DIRECTORY).rglob("*")
+            if file.suffix in AUDIO_EXT
+        ]
+
+    async def reload(self) -> None:
+        await self.setup()
 
     async def next(self) -> LiquidsoapUri | None:
         if not self.songs:
-            self.reload()
+            logger.error(f"{self.state.config.LOCAL_MUSIC_DIRECTORY} empty")
+            return None
 
-            if not self.songs:
-                logger.error(f"{self.state.config.LOCAL_MUSIC_DIRECTORY} empty")
-                return None
+        if not self.order:
+            self.order = self.songs.copy()
+            random.shuffle(self.order)
 
         return LiquidsoapUri(str(self.songs.pop()), {}, False)
-
-    def reload(self):
-        music = Path(self.state.config.LOCAL_MUSIC_DIRECTORY)
-
-        self.songs = [file for file in music.rglob("*") if file.suffix in AUDIO_EXT]
-        random.shuffle(self.songs)

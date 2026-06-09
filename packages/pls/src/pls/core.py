@@ -58,7 +58,8 @@ class Pls:
     async def url(self, url: str) -> Media | None:
         for pls in [self.streamrip, self.youtube]:
             try:
-                return await pls.url(url)
+                if result := await pls.url(url):
+                    return result
             except Exception:
                 logger.exception(f"{pls.name()} url")
 
@@ -67,7 +68,8 @@ class Pls:
     async def info(self, source: str, id: str, type: MediaType) -> Media | None:
         for pls in [self.streamrip, self.youtube]:
             try:
-                return await pls.info(source, id, type)
+                if result := await pls.info(source, id, type):
+                    return result
             except Exception:
                 logger.exception(f"{pls.name()} info")
 
@@ -76,7 +78,8 @@ class Pls:
     async def id(self, source: str, id: str, type: MediaType) -> Download | None:
         for pls in [self.streamrip, self.youtube]:
             try:
-                return await pls.id(source, id, type)
+                if result := await pls.id(source, id, type):
+                    return result
             except Exception:
                 logger.exception(f"{pls.name()} id")
 
@@ -85,7 +88,8 @@ class Pls:
     async def isrc(self, isrc: str) -> Download | None:
         for pls in [self.streamrip, self.youtube]:
             try:
-                return await pls.isrc(isrc)
+                if result := await pls.isrc(isrc):
+                    return result
             except Exception:
                 logger.exception(f"{pls.name()} isrc")
 

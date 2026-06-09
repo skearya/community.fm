@@ -18,6 +18,11 @@ class RadioMode(ABC):
         pass
 
     @abstractmethod
+    async def reload(self) -> None:
+        """Reloads any data that needs to be refreshed."""
+        pass
+
+    @abstractmethod
     async def next(self) -> LiquidsoapUri | None:
         """Returns the URI of the next song."""
         pass

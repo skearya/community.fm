@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from state import State
 
 
-@dataclass
+@dataclass(frozen=True)
 class User:
     id: int
     lastfm_username: str

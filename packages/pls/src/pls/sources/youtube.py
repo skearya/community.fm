@@ -81,11 +81,11 @@ class YoutubePls:
                 artist=entry.get("channel"),
             )
 
-        info_ydl_opts = {"quiet": True, "skip_download": True, "extract_flat": True}
+        ydl_opts = {"quiet": True, "skip_download": True, "extract_flat": "in_playlist"}
 
         def run() -> Media | None:
             try:
-                with YoutubeDL(info_ydl_opts) as ydl:
+                with YoutubeDL(ydl_opts) as ydl:
                     info = ydl.extract_info(query, download=False)
 
                     if "entries" in info:

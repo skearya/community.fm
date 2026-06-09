@@ -19,6 +19,9 @@ class RequestQueueMode(RadioMode):
     async def setup(self) -> None:
         pass
 
+    async def reload(self) -> None:
+        pass
+
     async def next(self) -> LiquidsoapUri | None:
         if not self.items:
             return None

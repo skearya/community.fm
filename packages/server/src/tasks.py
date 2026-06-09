@@ -6,10 +6,11 @@ from loguru import logger
 if TYPE_CHECKING:
     from state import State
 
-POLL_INTERVAL = 1
+ICECAST_POLL_INTERVAL = 1
+MODE_RELOAD_INTERVAL = 60 * 30
 
 
-async def poll_icecast(state: State):
+async def icecast_poller(state: State):
     while True:
         try:
             async with state.session.get(
@@ -22,4 +23,14 @@ async def poll_icecast(state: State):
         except Exception as e:
             logger.debug(f"Icecast poll error: {e}")
 
-        await asyncio.sleep(POLL_INTERVAL)
+        await asyncio.sleep(ICECAST_POLL_INTERVAL)
+
+
+async def mode_reloader(state: State):
+    while True:
+        await asyncio.sleep(MODE_RELOAD_INTERVAL)
+
+        try:
+            await state.manager.reload()
+        except Exception as e:
+            logger.exception(f"Mode reload error: {e}")

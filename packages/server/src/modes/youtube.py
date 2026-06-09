@@ -1,12 +1,10 @@
-import asyncio
 import random
 from typing import TYPE_CHECKING
 
 from loguru import logger
 from models import LiquidsoapUri
 from modes.mode import RadioMode
-from pls import Track
-from yt_dlp import YoutubeDL
+from pls import Playlist, Track
 
 if TYPE_CHECKING:
     from state import State
@@ -23,15 +21,22 @@ class YoutubeMode(RadioMode):
     async def setup(self) -> None:
         logger.info(f"Getting YouTube videos from playlist {self.playlist_id}...")
 
-        self.playlist = [
-            Track(id=None, url=id, isrc=None, title=None, artist=None)
-            for id in await get_video_ids(self.playlist_id)
-        ]
+        media = await self.state.pls.info("youtube", self.playlist_id, "playlist")
 
-        logger.info(f"Got {len(self.playlist)} YouTube video(s).")
+        if not isinstance(media, Playlist):
+            logger.error(f"YouTube 'playlist' {self.playlist_id} is not a playlist")
+            return
+
+        logger.info(f"Got {len(media.items)} YouTube video(s).")
+
+        self.playlist = media.items
+
+    async def reload(self) -> None:
+        await self.setup()
 
     async def next(self) -> LiquidsoapUri | None:
         if not self.playlist:
+            logger.info("No playlist items have been loaded yet or playlist is empty.")
             return None
 
         if not self.order:
@@ -45,27 +50,3 @@ class YoutubeMode(RadioMode):
             return LiquidsoapUri(dl.path, {}, True)
 
         logger.warning(f"Failed to download video: {track.url}")
-
-
-async def get_video_ids(playlist_id: str) -> list[str]:
-    def run() -> list[str]:
-        try:
-            with YoutubeDL(ydl_opts) as ydl:
-                info = ydl.extract_info(playlist_id, download=False)
-
-                if "entries" in info:
-                    return [e["id"] for e in info["entries"]]
-
-                raise ValueError("Key 'entries' not found")
-        except Exception:
-            logger.exception("Failed to get playlist")
-            return []
-
-    return await asyncio.to_thread(run)
-
-
-ydl_opts = {
-    "quiet": True,
-    "ignoreerrors": True,
-    "extract_flat": "in_playlist",
-}

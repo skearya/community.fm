@@ -56,10 +56,30 @@ class ModeManager:
         self.mode = random.choice([m for m in self.modes if m is not self.queue])
         self.request: Request | None = None
         self.history: deque[LiquidsoapUri] = deque()
+        self.reloading = asyncio.Lock()
 
     async def setup(self) -> None:
         for mode in self.modes:
             await mode.setup()
+
+    async def reload(self, modes: list[str] | None = None) -> bool:
+        if self.reloading.locked():
+            return False
+
+        name = ", ".join([f'"{m}"' for m in modes]) if modes else "all"
+
+        logger.debug(f"Reloading {name} modes.")
+
+        async with self.reloading:
+            for mode in self.modes:
+                if modes and mode.name not in modes:
+                    continue
+
+                await mode.reload()
+
+        logger.debug(f"Reloaded {name} modes.")
+
+        return True
 
     async def switch(self, name: str) -> bool:
         match = next((m for m in self.modes if m.name == name), None)

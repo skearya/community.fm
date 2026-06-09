@@ -16,13 +16,20 @@ class LikedSongsMode(RadioMode):
     async def setup(self) -> None:
         pass
 
+    async def reload(self) -> None:
+        pass
+
     async def next(self) -> LiquidsoapUri | None:
         if not self.state.liked:
-            logger.info("No liked songs have been loaded.")
+            logger.info("No liked songs have been loaded yet.")
             return None
 
-        user_id = random.choice(list(self.state.liked.keys()))
-        entry = self.state.liked[user_id]
+        user = random.choice(list(self.state.liked.keys()))
+
+        if not (entry := self.state.liked[user]):
+            logger.info("User has no songs in playlist?")
+            return None
+
         song = random.choice(entry.songs)
 
         logger.debug(f"Fetching liked song: {song}")

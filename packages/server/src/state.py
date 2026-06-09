@@ -4,11 +4,11 @@ from collections import deque
 import aiohttp
 from config import Config
 from db import Db
-from icecast import poll_icecast
 from lastfm import LastFM
 from manager import ModeManager
 from models import LikedSongEntry, LiquidsoapMetadata
 from pls import Pls
+from tasks import icecast_poller, mode_reloader
 from utils import Subscribable
 
 MAX_METADATA_HISTORY = 64
@@ -31,7 +31,10 @@ class State:
             maxlen=MAX_METADATA_HISTORY
         )
 
-        self.tasks = {asyncio.create_task(poll_icecast(self))}
+        self.tasks = [
+            asyncio.create_task(icecast_poller(self)),
+            asyncio.create_task(mode_reloader(self)),
+        ]
 
     async def __aenter__(self) -> State:
         await self.db.connect()
