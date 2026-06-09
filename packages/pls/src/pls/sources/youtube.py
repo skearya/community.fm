@@ -15,7 +15,7 @@ class YoutubePls:
             "writethumbnail": True,
             "postprocessors": [
                 {"key": "FFmpegExtractAudio", "preferredcodec": "mp3"},
-                {"key": "FFmpegMetadata"},
+                {"key": "FFmpegMetadata", "add_chapters": False},
                 {"key": "EmbedThumbnail"},
             ],
         }
