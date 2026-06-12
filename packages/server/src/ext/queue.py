@@ -195,7 +195,7 @@ class Queue(commands.Cog):
                 return mode
 
         await interaction.response.send_message(
-            "There aren't any request queues defined in the radio configuration."
+            "There aren't any request queues defined in the current radio configuration!"
         )
 
         return None
