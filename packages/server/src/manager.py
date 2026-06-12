@@ -202,6 +202,9 @@ def config(state: State) -> list[RadioMode]:
     if not modes:
         raise ConfigError("Config must define at least one radio mode")
 
+    if len([m for m in modes if isinstance(m, RequestQueueMode)]) > 1:
+        raise ConfigError("Config cannot define more than one request queue")
+
     return modes
 
 
