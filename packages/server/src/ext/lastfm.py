@@ -49,7 +49,7 @@ class Confirm(ui.Button):
                 await self.login.db.create_user(interaction.user.id, name, key)
 
             logger.info(
-                f"Last.fm '{name}' succesfully linked to discord '{interaction.user.name}"
+                f"Last.fm '{name}' successfully linked to discord '{interaction.user.name}'"
             )
 
             self.label = "Success!"
