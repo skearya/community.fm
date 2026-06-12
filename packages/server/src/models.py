@@ -4,9 +4,9 @@ from pls import Track
 
 
 @dataclass
-class LikedSongEntry:
+class ChannelModeEntry:
     username: str
-    songs: list[Track]
+    tracks: list[Track]
 
 
 # Sourced from liquidsoap: `settings.encoder.metadata.export()` without `settings.encoder.metadata.cover()`

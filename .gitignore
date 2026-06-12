@@ -15,5 +15,8 @@ logs
 # Secrets
 .env
 
+# Server config
+config.toml
+
 # Other
 .DS_Store

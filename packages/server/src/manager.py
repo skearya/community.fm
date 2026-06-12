@@ -1,23 +1,35 @@
 import asyncio
+import os
 import random
+import tomllib
+import typing
 from collections import deque
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Literal
 
 from loguru import logger
 from models import LiquidsoapUri
+from modes.channel import ChannelMode
 from modes.lastfm import LastFMMode
-from modes.liked import LikedSongsMode
 from modes.local import LocalSongsMode
 from modes.mode import RadioMode
 from modes.queue import RequestQueueMode
 from modes.youtube import YoutubeMode
+from utils import ConfigError, quoted
 
 if TYPE_CHECKING:
     from state import State
 
 RETRIES_BEFORE_MODE_SWITCH = 3
 DOWNLOADS_BEFORE_DELETION = 3
+
+MODE_CONSTRUCTORS = {
+    "youtube": YoutubeMode,
+    "last-fm": LastFMMode,
+    "channel": ChannelMode,
+    "queue": RequestQueueMode,
+    "local": LocalSongsMode,
+}
 
 
 class Request:
@@ -38,22 +50,11 @@ class Request:
 class ModeManager:
     def __init__(self, state: State):
         self.state = state
-        self.queue = RequestQueueMode(state)
-        self.modes: list[RadioMode] = [
-            LocalSongsMode(state),
-            LikedSongsMode(state),
-            LastFMMode(state),
-            self.queue,
-        ]
+        self.modes = config(state)
+        self.mode = random.choice(
+            [m for m in self.modes if not isinstance(m, RequestQueueMode)] or self.modes
+        )
 
-        if state.config.YOUTUBE_PLAYLIST_ID:
-            self.modes.append(YoutubeMode(state, state.config.YOUTUBE_PLAYLIST_ID))
-        else:
-            logger.warning(
-                "YOUTUBE_PLAYLIST_ID environment variable unset, disabling YouTube mix mode"
-            )
-
-        self.mode = random.choice([m for m in self.modes if m is not self.queue])
         self.request: Request | None = None
         self.history: deque[LiquidsoapUri] = deque()
         self.reloading = asyncio.Lock()
@@ -66,7 +67,7 @@ class ModeManager:
         if self.reloading.locked():
             return False
 
-        name = ", ".join([f'"{m}"' for m in modes]) if modes else "all"
+        name = ", ".join(quoted(modes)) if modes else "all"
 
         logger.debug(f"Reloading {name} modes.")
 
@@ -151,3 +152,83 @@ class ModeManager:
                 self.request = Request(self.mode)
 
                 return "LOADING"
+
+
+def config(state: State) -> list[RadioMode]:
+    text = Path(state.config.CONFIG_FILEPATH).read_text()
+
+    expanded = os.path.expandvars(text)
+    config = tomllib.loads(expanded)
+
+    if "modes" not in config:
+        raise ConfigError("Expected 'modes' in config, see example config")
+
+    if not isinstance(config["modes"], dict):
+        raise ConfigError(
+            "Expected 'modes' in config to be a dictionary, see example config"
+        )
+
+    modes: list[RadioMode] = []
+
+    for mode, instances in config["modes"].items():
+        assert isinstance(mode, str)
+
+        if not isinstance(instances, dict):
+            raise ConfigError(
+                f"Expected 'modes.{mode}' to be a dictionary, see example config"
+            )
+
+        if not (constructor := MODE_CONSTRUCTORS.get(mode)):
+            raise ConfigError(
+                f"Unexpected mode 'modes.{mode}', available modes are {', '.join(quoted(MODE_CONSTRUCTORS.keys()))}"
+            )
+
+        annotations = typing.get_type_hints(constructor.options())
+
+        for name, options in instances.items():
+            assert isinstance(name, str)
+
+            if not isinstance(options, dict):
+                raise ConfigError(
+                    f"Expected 'modes.{mode}.{name}' to be a dictionary, see example config"
+                )
+
+            options = {k.replace("-", "_"): v for k, v in options.items()}
+
+            validate(f"modes.{mode}.{name}", options, annotations)
+
+            modes.append(constructor(state, name, typing.cast(Any, options)))
+
+    if not modes:
+        raise ConfigError("Config must define at least one radio mode")
+
+    if len([m for m in modes if isinstance(m, RequestQueueMode)]) > 1:
+        raise ConfigError("Config cannot define more than one request queue")
+
+    return modes
+
+
+def validate(path: str, options: dict[Any, Any], annotations: dict[str, Any]):
+    for key, expected in annotations.items():
+        if key not in options:
+            raise ConfigError(
+                f"In '{path}': Missing key '{key}' with type '{expected}'"
+            )
+
+    for key, value in options.items():
+        if not (expected := annotations.get(key)):
+            raise ConfigError(
+                f"In '{path}': Unexpected key '{key}' in {options}, expected shape is '{annotations}'"
+            )
+
+        if typing.get_origin(expected) is Literal:
+            values = typing.get_args(expected)
+
+            if value not in values:
+                raise ConfigError(
+                    f"In '{path}': Expected key '{key}' with value '{value}' to be one of {','.join(quoted(values))}"
+                )
+        elif not isinstance(value, expected):
+            raise ConfigError(
+                f"In '{path}': Expected key '{key}' with value '{value}' to be of type '{expected}'"
+            )

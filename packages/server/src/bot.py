@@ -24,7 +24,7 @@ class CustomBot(commands.Bot):
         await self.load_extension("ext.stream")
         await self.load_extension("ext.queue")
         await self.load_extension("ext.reload")
-        await self.load_extension("ext.liked")
+        await self.load_extension("ext.channel")
         await self.load_extension("ext.lastfm")
 
         if self.state.config.PROD:

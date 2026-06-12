@@ -1,30 +1,31 @@
 from urllib.parse import urlencode
 
 from bot import CustomBot
+from clients.lastfm import LastFM
+from db import Db
 from discord import ButtonStyle, Interaction, app_commands, ui
 from discord.ext import commands
 from loguru import logger
 
 
 class Login(ui.LayoutView):
-    def __init__(self, bot: CustomBot, token: str):
+    def __init__(self, db: Db, lastfm: LastFM, token: str):
         super().__init__()
 
-        self.bot = bot
+        self.db = db
+        self.lastfm = lastfm
         self.token = token
 
-        lastfm = self.bot.state.lastfm
-
-        self.link, self.confirm = (
-            ui.Button(
-                label="Open Last.fm login",
-                url=f"http://www.last.fm/api/auth/?{urlencode({'api_key': lastfm.api_key, 'token': token})}",
-                style=ButtonStyle.link,
-            ),
-            Confirm(self),
+        self.add_item(
+            ui.ActionRow(
+                ui.Button(
+                    label="Open Last.fm login",
+                    url=f"http://www.last.fm/api/auth/?{urlencode({'api_key': lastfm.api_key, 'token': token})}",
+                    style=ButtonStyle.link,
+                ),
+                Confirm(self),
+            )
         )
-
-        self.add_item(ui.ActionRow(self.link, self.confirm))
 
 
 class Confirm(ui.Button):
@@ -34,10 +35,7 @@ class Confirm(ui.Button):
         self.login = login
 
     async def callback(self, interaction: Interaction):
-        db = self.login.bot.state.db
-        lastfm = self.login.bot.state.lastfm
-
-        getsession = await lastfm.api(
+        getsession = await self.login.lastfm.api(
             {"method": "auth.getsession", "token": self.login.token}
         )
 
@@ -45,13 +43,13 @@ class Confirm(ui.Button):
             key = getsession["session"]["key"]
             name = getsession["session"]["name"]
 
-            if await db.get_user(interaction.user.id):
-                await db.update_user(interaction.user.id, name, key)
+            if await self.login.db.get_user(interaction.user.id):
+                await self.login.db.update_user(interaction.user.id, name, key)
             else:
-                await db.create_user(interaction.user.id, name, key)
+                await self.login.db.create_user(interaction.user.id, name, key)
 
             logger.info(
-                f"Last.fm '{name}' succesfully linked to discord '{interaction.user.name}"
+                f"Last.fm '{name}' successfully linked to discord '{interaction.user.name}'"
             )
 
             self.label = "Success!"
@@ -80,11 +78,14 @@ class LastFMCog(commands.Cog):
     )
     @app_commands.guild_only()
     async def link_lastfm(self, interaction: Interaction):
-        lastfm = self.bot.state.lastfm
+        if not (lastfm := self.bot.state.lastfm):
+            await interaction.response.send_message(
+                "The radio is missing credentials needed to work with Last.fm.",
+                ephemeral=True,
+            )
+            return
 
-        gettoken = await lastfm.api({"method": "auth.gettoken"})
-
-        if not gettoken:
+        if not (gettoken := await lastfm.api({"method": "auth.gettoken"})):
             await interaction.response.send_message(
                 "Something went wrong when communicating with Last.fm, please check server logs or try again later.",
                 ephemeral=True,
@@ -92,7 +93,7 @@ class LastFMCog(commands.Cog):
             return
 
         await interaction.response.send_message(
-            view=Login(self.bot, gettoken["token"]), ephemeral=True
+            view=Login(self.bot.state.db, lastfm, gettoken["token"]), ephemeral=True
         )
 
     @app_commands.command(

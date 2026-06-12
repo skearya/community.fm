@@ -26,7 +26,7 @@ class Reload(commands.Cog):
     async def reload(self, interaction: Interaction, mode: str | None):
         manager = self.bot.state.manager
 
-        if mode and mode not in [m.name for m in manager.modes]:
+        if mode and mode not in (m.name for m in manager.modes):
             await interaction.response.send_message(
                 f"I couldn't find a mode with the name '{mode}'."
             )

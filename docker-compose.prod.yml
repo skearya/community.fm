@@ -13,6 +13,7 @@ services:
             - YOUTUBE_PLAYLIST_ID
         volumes:
             - ${DATA_DIRECTORY}:/data:rw
+            - ${CONFIG_PATH}:/data/config.toml:ro
             - ${DOWNLOAD_DIRECTORY}:/downloads:rw
             - ${LOCAL_MUSIC_DIRECTORY}:/music:ro
             - ${STREAMRIP_CONFIG_PATH}:/home/nonroot/.config/streamrip/config.toml:ro

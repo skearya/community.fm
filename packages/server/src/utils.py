@@ -3,8 +3,13 @@ import inspect
 import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from typing import Iterable
 
 from loguru import logger
+
+
+class ConfigError(Exception):
+    pass
 
 
 class Subscribable[T]:
@@ -58,3 +63,7 @@ class InterceptHandler(logging.Handler):
         logger.opt(depth=depth, exception=record.exc_info).log(
             level, record.getMessage()
         )
+
+
+def quoted(items: Iterable[str]) -> Iterable[str]:
+    return (f"'{item}'" for item in items)

@@ -61,7 +61,7 @@ class Stream(commands.Cog):
         manager = self.bot.state.manager
 
         return [
-            app_commands.Choice(name=mode.name, value=mode.name)
+            app_commands.Choice(name=f"{mode.name} ({mode.mode})", value=mode.name)
             for mode in manager.modes
             if current in mode.name
         ]

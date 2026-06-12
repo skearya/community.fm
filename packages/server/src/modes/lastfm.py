@@ -1,15 +1,18 @@
 import random
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal, TypedDict
 
 from db import User
 from loguru import logger
 from models import LiquidsoapUri
 from modes.mode import RadioMode
 from pls import Track
+from utils import ConfigError
 
 if TYPE_CHECKING:
     from state import State
+
+DECAY_BASE = 0.99
 
 
 @dataclass()
@@ -18,17 +21,25 @@ class LastFMItem:
     playcount: int
 
 
-DECAY_BASE = 0.99
+class LastFMOptions(TypedDict):
+    period: Literal["overall", "7day", "1month", "3month", "6month", "12month"]
 
 
 class LastFMMode(RadioMode):
-    def __init__(self, state: State):
-        super().__init__("Last.fm Weekly Top Songs", state)
+    def options() -> type[Any]:
+        return LastFMOptions
 
+    def __init__(self, state: State, name: str, options: LastFMOptions):
+        super().__init__(state, "Last.fm Top Songs", name)
+
+        if not (lastfm := self.state.lastfm):
+            raise ConfigError(
+                "Cannot use Last.fm radio mode without `LASTFM_API_KEY` and `LASTFM_SECRET` environment variables."
+            )
+
+        self.lastfm = lastfm
+        self.period = options["period"]
         self.top: dict[User, list[LastFMItem]] = {}
-        self.period: Literal[
-            "overall", "7day", "1month", "3month", "6month", "12month"
-        ] = "7day"
 
     async def setup(self) -> None:
         if not (users := await self.state.db.get_users()):
@@ -76,7 +87,7 @@ class LastFMMode(RadioMode):
         page = 1
 
         while True:
-            gettoptracks = await self.state.lastfm.api(
+            gettoptracks = await self.lastfm.api(
                 {
                     "method": "user.gettoptracks",
                     "user": user.lastfm_username,

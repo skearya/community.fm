@@ -11,21 +11,12 @@ LASTFM_BASE_URL = "https://ws.audioscrobbler.com"
 
 
 class LastFM:
-    def __init__(self, state: State):
+    def __init__(self, state: State, api_key: str, secret: str):
         self.state = state
-
-        LASTFM_API_KEY = state.config.LASTFM_API_KEY
-        assert LASTFM_API_KEY
-
-        LASTFM_SECRET = state.config.LASTFM_SECRET
-        assert LASTFM_SECRET
-
-        self.api_key = LASTFM_API_KEY
-        self.secret = LASTFM_SECRET
+        self.api_key = api_key
+        self.secret = secret
 
     async def api(self, params: dict[str, str]) -> dict | None:
-        session = self.state.session
-
         params["format"] = "json"
         params["api_key"] = self.api_key
         params["api_sig"] = md5(
@@ -35,7 +26,7 @@ class LastFM:
             ).encode()
         ).hexdigest()
 
-        async with session.get(
+        async with self.state.session.get(
             f"{LASTFM_BASE_URL}/2.0/?{urlencode(params)}"
         ) as response:
             data = await response.json()
