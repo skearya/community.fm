@@ -120,7 +120,8 @@
 				<button class="bg-rose-400 py-0.5 pr-3.5 pl-2" onclick={() => (showInfo = !showInfo)}>
 					{showInfo ? 'Hide' : 'More'} Info
 				</button>
-				{#each [[s.data.stream, 'Icecast'], [`${new URL('.stream.ogg.m3u', s.data.stream)}`, '.m3u'], [`${new URL('.stream.ogg.xslf', s.data.stream)}`, '.xslf']] as const as [href, name] (href)}
+				<!-- TODO: .m3u and .xslf links -->
+				{#each [[s.data.stream, 'Icecast']] as const as [href, name] (href)}
 					<a rel="external" {href} class="bg-pink-400 py-0.5 pr-3.5 pl-2">{name}</a>
 				{/each}
 			</div>
