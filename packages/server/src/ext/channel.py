@@ -97,6 +97,7 @@ class ChannelIngester(commands.Cog):
             entries[message.author.id] = ChannelModeEntry(message.author.name, tracks)
             return len(tracks)
         except Exception:
+            logger.exception("Failed to ingest channel CSV")
             return None
 
     def parse(self, text: str) -> list[Track] | None:
