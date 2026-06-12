@@ -52,7 +52,7 @@ class ModeManager:
         self.state = state
         self.modes = config(state)
         self.mode = random.choice(
-            [m for m in self.modes if not isinstance(m, RequestQueueMode)]
+            [m for m in self.modes if not isinstance(m, RequestQueueMode)] or self.modes
         )
 
         self.request: Request | None = None
@@ -198,6 +198,9 @@ def config(state: State) -> list[RadioMode]:
             validate(f"modes.{mode}.{name}", options, annotations)
 
             modes.append(constructor(state, name, typing.cast(Any, options)))
+
+    if not modes:
+        raise ConfigError("Config must define at least one radio mode")
 
     return modes
 
