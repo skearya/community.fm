@@ -165,7 +165,7 @@ def config(state: State) -> list[RadioMode]:
 
     if not isinstance(config["modes"], dict):
         raise ConfigError(
-            "Expected 'modes' in config to be an dictionary, see example config"
+            "Expected 'modes' in config to be a dictionary, see example config"
         )
 
     modes: list[RadioMode] = []
@@ -175,7 +175,7 @@ def config(state: State) -> list[RadioMode]:
 
         if not isinstance(instances, dict):
             raise ConfigError(
-                f"Expected 'modes.{mode}' to be an dictionary, see example config"
+                f"Expected 'modes.{mode}' to be a dictionary, see example config"
             )
 
         if not (constructor := MODE_CONSTRUCTORS.get(mode)):
@@ -190,12 +190,12 @@ def config(state: State) -> list[RadioMode]:
 
             if not isinstance(options, dict):
                 raise ConfigError(
-                    f"Expected 'modes.{mode}.{name}' to be an dictionary, see example config"
+                    f"Expected 'modes.{mode}.{name}' to be a dictionary, see example config"
                 )
 
             options = {k.replace("-", "_"): v for k, v in options.items()}
 
-            validate(f"modes.mode.{name}", options, annotations)
+            validate(f"modes.{mode}.{name}", options, annotations)
 
             modes.append(constructor(state, name, typing.cast(Any, options)))
 
