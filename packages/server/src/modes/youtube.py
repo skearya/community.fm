@@ -1,20 +1,27 @@
 import random
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, TypedDict
 
 from loguru import logger
 from models import LiquidsoapUri
 from modes.mode import RadioMode
-from pls import Playlist, Track
+from pls import Album, Playlist, Track
 
 if TYPE_CHECKING:
     from state import State
 
 
-class YoutubeMode(RadioMode):
-    def __init__(self, state: State, playlist_id: str):
-        super().__init__("YouTube Playlist", state)
+class YoutubeOptions(TypedDict):
+    playlist_id: str
 
-        self.playlist_id = playlist_id
+
+class YoutubeMode(RadioMode):
+    def options() -> type[Any]:
+        return YoutubeOptions
+
+    def __init__(self, state: State, name: str, options: YoutubeOptions):
+        super().__init__(state, "YouTube Playlist", name)
+
+        self.playlist_id = options["playlist_id"]
         self.playlist: list[Track] = []
         self.order: list[Track] = []
 
@@ -23,13 +30,12 @@ class YoutubeMode(RadioMode):
 
         media = await self.state.pls.info("youtube", self.playlist_id, "playlist")
 
-        if not isinstance(media, Playlist):
-            logger.error(f"YouTube 'playlist' {self.playlist_id} is not a playlist")
-            return
+        if isinstance(media, Track):
+            self.playlist = [media]
+        elif isinstance(media, Album | Playlist):
+            self.playlist = media.items
 
-        logger.info(f"Got {len(media.items)} YouTube video(s).")
-
-        self.playlist = media.items
+        logger.info(f"Got {len(self.playlist)} YouTube video(s).")
 
     async def reload(self) -> None:
         await self.setup()

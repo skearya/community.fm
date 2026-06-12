@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from models import LiquidsoapUri
 
@@ -8,9 +8,15 @@ if TYPE_CHECKING:
 
 
 class RadioMode(ABC):
-    def __init__(self, name: str, state: State):
-        self.name = name
+    @abstractmethod
+    def options() -> type[Any]:
+        """Returns a `TypedDict` class of options that will be passed to the constructor."""
+        pass
+
+    def __init__(self, state: State, mode: str, name: str):
         self.state = state
+        self.mode = mode
+        self.name = name
 
     @abstractmethod
     async def setup(self) -> None:

@@ -1,15 +1,19 @@
 import random
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal, TypedDict
 
+from clients.lastfm import LastFM
 from db import User
 from loguru import logger
 from models import LiquidsoapUri
 from modes.mode import RadioMode
 from pls import Track
+from utils import ConfigError
 
 if TYPE_CHECKING:
     from state import State
+
+DECAY_BASE = 0.99
 
 
 @dataclass()
@@ -18,19 +22,26 @@ class LastFMItem:
     playcount: int
 
 
-DECAY_BASE = 0.99
+class LastFMOptions(TypedDict):
+    period: Literal["overall", "7day", "1month", "3month", "6month", "12month"]
 
 
 class LastFMMode(RadioMode):
-    def __init__(self, state: State):
-        super().__init__("Last.fm Weekly Top Songs", state)
+    def options() -> type[Any]:
+        return LastFMOptions
 
+    def __init__(self, state: State, name: str, options: LastFMOptions):
+        super().__init__(state, "Last.fm Top Songs", name)
+
+        self.period = options["period"]
         self.top: dict[User, list[LastFMItem]] = {}
-        self.period: Literal[
-            "overall", "7day", "1month", "3month", "6month", "12month"
-        ] = "7day"
 
     async def setup(self) -> None:
+        if not (lastfm := self.state.lastfm):
+            raise ConfigError(
+                "Cannot use Last.fm radio mode without `LASTFM_API_KEY` and `LASTFM_SECRET` environment variables."
+            )
+
         if not (users := await self.state.db.get_users()):
             logger.info("No Last.fm users exist in the database.")
             return None
@@ -39,7 +50,7 @@ class LastFMMode(RadioMode):
             f"Getting Last.fm {self.period} top tracks for {len(users)} user(s)."
         )
 
-        self.top = {user: await self.gettoptracks(user) for user in users}
+        self.top = {user: await self.gettoptracks(lastfm, user) for user in users}
 
         logger.info("Got Last.fm top tracks.")
 
@@ -71,12 +82,12 @@ class LastFMMode(RadioMode):
 
         logger.warning(f"Failed to download Last.fm item: {item.track}")
 
-    async def gettoptracks(self, user: User) -> list[LastFMItem]:
+    async def gettoptracks(self, lastfm: LastFM, user: User) -> list[LastFMItem]:
         items: list[LastFMItem] = []
         page = 1
 
         while True:
-            gettoptracks = await self.state.lastfm.api(
+            gettoptracks = await lastfm.api(
                 {
                     "method": "user.gettoptracks",
                     "user": user.lastfm_username,

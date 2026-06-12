@@ -2,11 +2,11 @@ import asyncio
 from collections import deque
 
 import aiohttp
+from clients.lastfm import LastFM
 from config import Config
 from db import Db
-from lastfm import LastFM
 from manager import ModeManager
-from models import LikedSongEntry, LiquidsoapMetadata
+from models import LiquidsoapMetadata
 from pls import Pls
 from tasks import icecast_poller, mode_reloader
 from utils import Subscribable
@@ -22,9 +22,12 @@ class State:
 
         self.pls = Pls(self.config.PLS_DOWNLOAD_DIRECTORY)
         self.session = aiohttp.ClientSession()
-        self.lastfm = LastFM(self)
+        self.lastfm = (
+            LastFM(self, self.config.LASTFM_API_KEY, self.config.LASTFM_SECRET)
+            if self.config.LASTFM_API_KEY and self.config.LASTFM_SECRET
+            else None
+        )
 
-        self.liked: dict[int, LikedSongEntry] = {}
         self.status: Subscribable[object] = Subscribable()
         self.metadata: Subscribable[LiquidsoapMetadata] = Subscribable()
         self.history: deque[tuple[LiquidsoapMetadata, int | float]] = deque(

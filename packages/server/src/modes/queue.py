@@ -1,5 +1,5 @@
 from collections import deque
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, TypedDict
 
 from loguru import logger
 from models import LiquidsoapUri
@@ -10,10 +10,18 @@ if TYPE_CHECKING:
     from state import State
 
 
-class RequestQueueMode(RadioMode):
-    def __init__(self, state: State):
-        super().__init__("Request Queue", state)
+class RequestQueueOptions(TypedDict):
+    autoswitch: bool
 
+
+class RequestQueueMode(RadioMode):
+    def options() -> type[Any]:
+        return RequestQueueOptions
+
+    def __init__(self, state: State, name: str, options: RequestQueueOptions):
+        super().__init__(state, "Request Queue", name)
+
+        self.autoswitch = options["autoswitch"]
         self.items: deque[tuple[str, Track]] = deque()
 
     async def setup(self) -> None:

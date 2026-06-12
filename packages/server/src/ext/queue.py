@@ -7,6 +7,7 @@ from bot import CustomBot
 from cachetools import LRUCache
 from discord import Interaction, app_commands
 from discord.ext import commands
+from modes.queue import RequestQueueMode
 from pls import Album, Media, MediaType, Playlist, Summary, Track
 
 
@@ -21,34 +22,31 @@ class Queue(commands.Cog):
     @app_commands.describe(url="YouTube/Qobuz/Tidal/Deezer/Soundcloud supported")
     @app_commands.guild_only()
     async def queue_url(self, interaction: Interaction, url: str):
+        if not (queue := await self.default(interaction)):
+            return
+
         await interaction.response.defer()
 
-        pls = self.bot.state.pls
-
-        media = await pls.url(url)
-
-        if media is None:
+        if not (media := await self.bot.state.pls.url(url)):
             await interaction.followup.send(
                 "I failed to fetch needed metadata from this URL. Are you using a supported service (YouTube/Qobuz/Tidal/Deezer/Soundcloud)?",
                 ephemeral=True,
             )
             return
 
-        embed = await self.queue_process_media(interaction.user.name, media)
+        embed = await self.process(queue, interaction.user.name, media)
         await interaction.followup.send(embed=embed)
 
     async def query_autocomplete(
         self, interaction: discord.Interaction, current: str
     ) -> list[app_commands.Choice[str]]:
-        pls = self.bot.state.pls
-
         type = interaction.namespace.type
         service = interaction.namespace.service
 
         if not type or not current:
             return []
 
-        results = await pls.search(
+        results = await self.bot.state.pls.search(
             query=current,
             type=interaction.namespace.type,
             services=[service] if service else None,
@@ -70,13 +68,12 @@ class Queue(commands.Cog):
         return choices
 
     async def service_autocomplete(
-        self, _interaction: discord.Interaction, _current: str
+        self, _interaction: discord.Interaction, current: str
     ) -> list[app_commands.Choice[str]]:
-        pls = self.bot.state.pls
-
         return [
             app_commands.Choice(name=service, value=service)
-            for service in pls.services()
+            for service in self.bot.state.pls.services()
+            if current in service
         ]
 
     @app_commands.command(
@@ -95,34 +92,59 @@ class Queue(commands.Cog):
         query: str,
         service: str | None = None,
     ):
+        if not (queue := await self.default(interaction)):
+            return
+
         await interaction.response.defer()
 
         pls = self.bot.state.pls
 
-        summary = self.summaries.get(query) or await pls.best(
-            query, type, [service] if service else None
-        )
-
-        if summary is None:
+        if not (
+            summary := self.summaries.get(query)
+            or await pls.best(query, type, [service] if service else None)
+        ):
             await interaction.followup.send(
                 "I failed to find a close enough match, try selecting an autocomplete option or queuing a URL."
             )
             return
 
-        media = await pls.info(*summary.id, summary.type)
-
-        if media is None:
+        if not (media := await pls.info(*summary.id, summary.type)):
             await interaction.followup.send(
                 f"I failed to fetch needed metadata for {summary.title} by {summary.artist} ({summary.id[0]}), please try another service."
             )
             return
 
-        embed = await self.queue_process_media(interaction.user.name, media)
+        embed = await self.process(queue, interaction.user.name, media)
         await interaction.followup.send(embed=embed)
 
-    async def queue_process_media(self, username: str, media: Media) -> discord.Embed:
-        manager = self.bot.state.manager
+    @app_commands.command(description="See the current tracks in queue.")
+    @app_commands.guild_only()
+    async def queue(self, interaction: Interaction):
+        if not (queue := await self.default(interaction)):
+            return
 
+        lines: list[str] = []
+
+        for username, track in queue.items:
+            details = " • ".join(
+                filter(
+                    None,
+                    [track.id and f"*{track.id[0]}*", f"*{username}*"],
+                )
+            )
+
+            lines.append(
+                f"**{track.title or 'Unknown'}** by {track.artist or 'Unknown'}\n"
+                f"-# {details}",
+            )
+
+        embed = discord.Embed(title="Queue", description="\n".join(lines) or "...")
+
+        await interaction.response.send_message(embed=embed)
+
+    async def process(
+        self, queue: RequestQueueMode, username: str, media: Media
+    ) -> discord.Embed:
         embed = discord.Embed()
 
         if isinstance(media, Track):
@@ -135,7 +157,7 @@ class Queue(commands.Cog):
             if media.url:
                 embed.url = media.url
 
-            manager.queue.items.append((username, media))
+            queue.items.append((username, media))
         elif isinstance(media, Album | Playlist):
             embed.title = "Album queued"
             embed.description = (
@@ -158,36 +180,25 @@ class Queue(commands.Cog):
             if isinstance(media, Album) and media.cover:
                 embed.set_thumbnail(url=media.cover)
 
-            manager.queue.items.extend([(username, track) for track in media.items])
+            queue.items.extend([(username, track) for track in media.items])
 
-        if manager.mode is not manager.queue:
-            await manager.switch(manager.queue.name)
+        manager = self.bot.state.manager
+
+        if queue.autoswitch and manager.mode is not queue:
+            await manager.switch(queue.name)
 
         return embed
 
-    @app_commands.command(description="See the current tracks in queue.")
-    @app_commands.guild_only()
-    async def queue(self, interaction: Interaction):
-        manager = self.bot.state.manager
+    async def default(self, interaction: Interaction) -> RequestQueueMode | None:
+        for mode in self.bot.state.manager.modes:
+            if isinstance(mode, RequestQueueMode):
+                return mode
 
-        lines: list[str] = []
+        await interaction.response.send_message(
+            "There aren't any request queues defined in the radio configuration."
+        )
 
-        for username, track in manager.queue.items:
-            details = " • ".join(
-                filter(
-                    None,
-                    [track.id and f"*{track.id[0]}*", f"*{username}*"],
-                )
-            )
-
-            lines.append(
-                f"**{track.title or 'Unknown'}** by {track.artist or 'Unknown'}\n"
-                f"-# {details}",
-            )
-
-        embed = discord.Embed(title="Queue", description="\n".join(lines) or "...")
-
-        await interaction.response.send_message(embed=embed)
+        return None
 
 
 async def setup(bot: CustomBot):
