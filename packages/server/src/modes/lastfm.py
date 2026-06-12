@@ -2,7 +2,6 @@ import random
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, TypedDict
 
-from clients.lastfm import LastFM
 from db import User
 from loguru import logger
 from models import LiquidsoapUri
@@ -33,15 +32,16 @@ class LastFMMode(RadioMode):
     def __init__(self, state: State, name: str, options: LastFMOptions):
         super().__init__(state, "Last.fm Top Songs", name)
 
-        self.period = options["period"]
-        self.top: dict[User, list[LastFMItem]] = {}
-
-    async def setup(self) -> None:
         if not (lastfm := self.state.lastfm):
             raise ConfigError(
                 "Cannot use Last.fm radio mode without `LASTFM_API_KEY` and `LASTFM_SECRET` environment variables."
             )
 
+        self.lastfm = lastfm
+        self.period = options["period"]
+        self.top: dict[User, list[LastFMItem]] = {}
+
+    async def setup(self) -> None:
         if not (users := await self.state.db.get_users()):
             logger.info("No Last.fm users exist in the database.")
             return None
@@ -50,7 +50,7 @@ class LastFMMode(RadioMode):
             f"Getting Last.fm {self.period} top tracks for {len(users)} user(s)."
         )
 
-        self.top = {user: await self.gettoptracks(lastfm, user) for user in users}
+        self.top = {user: await self.gettoptracks(user) for user in users}
 
         logger.info("Got Last.fm top tracks.")
 
@@ -82,12 +82,12 @@ class LastFMMode(RadioMode):
 
         logger.warning(f"Failed to download Last.fm item: {item.track}")
 
-    async def gettoptracks(self, lastfm: LastFM, user: User) -> list[LastFMItem]:
+    async def gettoptracks(self, user: User) -> list[LastFMItem]:
         items: list[LastFMItem] = []
         page = 1
 
         while True:
-            gettoptracks = await lastfm.api(
+            gettoptracks = await self.lastfm.api(
                 {
                     "method": "user.gettoptracks",
                     "user": user.lastfm_username,

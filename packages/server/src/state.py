@@ -17,7 +17,6 @@ MAX_METADATA_HISTORY = 64
 class State:
     def __init__(self):
         self.config = Config()
-        self.manager = ModeManager(self)
         self.db = Db(self)
 
         self.pls = Pls(self.config.PLS_DOWNLOAD_DIRECTORY)
@@ -27,6 +26,8 @@ class State:
             if self.config.LASTFM_API_KEY and self.config.LASTFM_SECRET
             else None
         )
+
+        self.manager = ModeManager(self)
 
         self.status: Subscribable[object] = Subscribable()
         self.metadata: Subscribable[LiquidsoapMetadata] = Subscribable()
