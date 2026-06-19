@@ -1,4 +1,4 @@
-FROM savonet/liquidsoap:v2.4.4
+FROM savonet/liquidsoap:v2.4.5
 
 COPY . /etc/liquidsoap
 
