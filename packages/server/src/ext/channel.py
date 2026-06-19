@@ -1,3 +1,4 @@
+import plistlib
 import csv
 from io import StringIO
 
@@ -8,8 +9,6 @@ from loguru import logger
 from models import ChannelModeEntry
 from modes.channel import ChannelMode
 from pls import Track
-
-CSV_CONTENT_TYPE = "text/csv"
 
 
 class ChannelIngester(commands.Cog):
@@ -31,12 +30,10 @@ class ChannelIngester(commands.Cog):
                     continue
 
                 async for message in channel.history(oldest_first=False):
-                    if message.author.id in mode.entries or not (
-                        attachment := self.find_attachment(message)
+                    if message.author.id not in mode.entries and (
+                        attachment := self.find(message)
                     ):
-                        continue
-
-                    await self.update(message, attachment, mode.entries)
+                        await self.update(message, attachment, mode.entries)
 
             logger.info(f"Got channel tracks for {len(mode.entries)} user(s).")
 
@@ -52,11 +49,7 @@ class ChannelIngester(commands.Cog):
             None,
         )
 
-        if (
-            not mode
-            or message.author.bot
-            or not (attachment := self.find_attachment(message))
-        ):
+        if not mode or message.author.bot or not (attachment := self.find(message)):
             return
 
         if count := await self.update(message, attachment, mode.entries):
@@ -67,15 +60,16 @@ class ChannelIngester(commands.Cog):
             )
         else:
             await message.reply(
-                "Invalid CSV. Please use https://exportify.app/ or https://export-youtube-playlist.vercel.app/"
+                "Invalid attachment. Please use [Exportify](https://exportify.app/) or [Export Youtube Playlist](https://export-youtube-playlist.vercel.app/) or [Apple Music's Exporter](https://support.apple.com/guide/music/save-a-copy-of-your-playlists-mus27cd5060f/mac)"
             )
 
-    def find_attachment(self, message: Message) -> Attachment | None:
+    def find(self, message: Message) -> Attachment | None:
         return next(
             (
                 a
                 for a in message.attachments
-                if a.content_type and a.content_type.startswith(CSV_CONTENT_TYPE)
+                if a.content_type
+                and a.content_type.startswith(("text/csv", "application/xml"))
             ),
             None,
         )
@@ -91,16 +85,26 @@ class ChannelIngester(commands.Cog):
                 response.raise_for_status()
                 text = await response.text()
 
-            if not (tracks := self.parse(text)):
+            assert attachment.content_type
+
+            tracks = (
+                self.csv(text)
+                if attachment.content_type.startswith("text/csv")
+                else self.xml(text)
+                if attachment.content_type.startswith("application/xml")
+                else None
+            )
+
+            if not tracks:
                 return None
 
             entries[message.author.id] = ChannelModeEntry(message.author.name, tracks)
             return len(tracks)
         except Exception:
-            logger.exception("Failed to ingest channel CSV")
+            logger.exception("Failed to ingest channel attachment")
             return None
 
-    def parse(self, text: str) -> list[Track] | None:
+    def csv(self, text: str) -> list[Track] | None:
         reader = csv.DictReader(StringIO(text))
 
         if reader.fieldnames is None:
@@ -136,6 +140,20 @@ class ChannelIngester(commands.Cog):
             ]
 
         return None
+
+    def xml(self, text: str) -> list[Track] | None:
+        data = plistlib.loads(text)
+
+        return [
+            Track(
+                id=("apple", track["Track ID"]),
+                url=None,
+                isrc=None,
+                title=track["Name"],
+                artist=track["Artist"],
+            )
+            for track in data["Tracks"].values()
+        ]
 
 
 async def setup(bot: CustomBot):
