@@ -11,6 +11,8 @@ services:
             - DISCORD_BOT_TOKEN
             - DISCORD_TEST_GUILD
             - YOUTUBE_PLAYLIST_ID
+            - LASTFM_API_KEY
+            - LASTFM_SECRET
         volumes:
             - ${DATA_DIRECTORY}:/data:rw
             - ${CONFIG_PATH}:/data/config.toml:ro

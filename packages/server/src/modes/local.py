@@ -44,4 +44,4 @@ class LocalSongsMode(RadioMode):
             self.order = self.songs.copy()
             random.shuffle(self.order)
 
-        return LiquidsoapUri(str(self.songs.pop()), {}, False)
+        return LiquidsoapUri(str(self.order.pop()), {}, False)

@@ -52,7 +52,7 @@ class LastFMMode(RadioMode):
 
         self.top = {user: await self.gettoptracks(user) for user in users}
 
-        logger.info("Got Last.fm top tracks.")
+        logger.info(f"Got Last.fm '{self.period}' top tracks.")
 
     async def reload(self) -> None:
         await self.setup()
