@@ -1,1 +1,22 @@
 @import 'tailwindcss';
+
+@theme {
+	--font-sans:
+		'SF Pro', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+		'Segoe UI Symbol', 'Noto Color Emoji';
+
+	--color-background: #ffffff;
+	--color-foreground: #1f1f1f;
+
+	--color-gray: #686868;
+	--color-dark-gray: #3a3a3a;
+	--color-light-gray: #f2f2f7;
+	--color-red: #ff393c;
+}
+
+@layer base {
+	body {
+		background-color: var(--color-background);
+		color: var(--color-foreground);
+	}
+}
