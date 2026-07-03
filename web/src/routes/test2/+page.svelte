@@ -126,7 +126,7 @@
 				<p class="text-[22px] leading-6.5 tracking-wide">Live</p>
 			</div>
 			<button
-				class="group relative mr-16.25 flex gap-x-1.5 rounded-[59px] bg-light-gray px-5 py-3.75 text-background"
+				class="group relative flex gap-x-1.5 rounded-[59px] bg-light-gray px-5 py-3.75 text-background"
 			>
 				<Volume />
 				<div class="absolute bottom-0 left-0 h-full w-full translate-y-1/2 opacity-0"></div>
@@ -143,11 +143,6 @@
 					/>
 				</div>
 			</button>
-			<div
-				class="ml-auto flex gap-x-1.5 self-start rounded-[59px] bg-light-gray px-3.75 py-2.5 text-background"
-			>
-				<p class="text-[16px] leading-4.75 tracking-wide text-foreground">Vote skip</p>
-			</div>
 		</div>
 	</nav>
 
