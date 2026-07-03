@@ -164,7 +164,7 @@
 	>
 		<div
 			bind:this={leftElement}
-			class="group z-10 flex flex-col text-left will-change-transform"
+			class="group z-10 flex flex-col items-start will-change-transform"
 			{title}
 		>
 			<p class="mb-1.5 truncate text-[48px] leading-14.25 font-medium">{metadata?.title}</p>
