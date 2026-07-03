@@ -14,28 +14,33 @@
 	let { stream, metadata, status, modes }: Data = $props();
 
 	let show = $state(false);
+	let loading = $state(false);
 	let volumeLevel = $state(50);
 
 	let audio: HTMLAudioElement | null = null;
 
-	function connect() {
+	async function connect() {
 		audio = new Audio();
 		audio.preload = 'none';
 		audio.volume = volumeLevel / 100;
 		audio.src =
 			new URL('stream.ogg', stream) + '?' + new URLSearchParams({ cache: `${Date.now()}` });
 
+		loading = true;
+
 		audio.load();
-		audio.play();
+		await audio.play();
+
+		loading = false;
 	}
 
 	function disconnect() {
-		if (audio) {
-			audio.pause();
-			audio.src = '';
-			audio.removeAttribute('src');
-			audio = null;
-		}
+		if (!audio) return;
+
+		audio.pause();
+		audio.src = '';
+		audio.removeAttribute('src');
+		audio = null;
 	}
 
 	$effect(() => {
@@ -195,7 +200,7 @@
 					alt="cover"
 					class={[
 						'aspect-square max-h-125.75 min-h-0 rounded-[83px] object-contain transition-[filter]',
-						!show && 'brightness-50'
+						(!show || loading) && 'brightness-50'
 					]}
 				/>
 			</button>
@@ -224,12 +229,7 @@
 		/>
 		<div class="min-w-0 flex-1">
 			<div class="mb-3 text-[22px] leading-7.5">
-				<p class="truncate">
-					Lorem ipsum dolor sit amet consectetur adipisicing elit. Iste placeat laboriosam
-					aspernatur vel esse modi corporis minima, nostrum quas sapiente incidunt recusandae
-					cupiditate sequi, consequatur tempora accusantium aliquam nemo molestias. Nothing Even
-					Matters (D’Angelo)
-				</p>
+				<p class="truncate">Nothing Even Matters (D’Angelo)</p>
 				<p class="truncate text-gray">Ms. Lauryn Hill</p>
 			</div>
 			<div class="flex gap-x-3.25">
