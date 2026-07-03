@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { fade } from 'svelte/transition';
 	import type { PageProps } from './$types';
 	import { cloneOver, flip } from '$lib/animation';
 	import Play from '$lib/icons/Play.svelte';
@@ -100,8 +99,11 @@
 	}
 </script>
 
-<main class="mx-auto flex max-w-360 flex-col">
-	<nav class="flex items-center justify-between px-7.5 py-8">
+<main
+	style="gap: clamp(30px, calc(30px + (100vh - 850px) * 30 / (1080 - 850)), 60px);"
+	class="mx-auto flex max-w-360 flex-col"
+>
+	<nav class="flex items-center justify-between px-7.5 pt-8">
 		<div class="flex gap-x-3.75">
 			<img
 				src="https://f4.bcbits.com/img/a3554352334_1x1_700.avif"
@@ -148,7 +150,7 @@
 
 	<div
 		class={[
-			'mx-auto flex w-full max-w-289 flex-col items-center justify-start gap-y-26.25 p-7.5 xl:flex-row xl:items-stretch',
+			'mx-auto flex w-full max-w-288.5 flex-col items-center justify-start gap-y-26.25 px-7.5 pb-8 xl:flex-row xl:items-stretch',
 			show ? 'xl:justify-between' : 'xl:justify-center'
 		]}
 	>
@@ -167,14 +169,14 @@
 					}
 				}}
 			>
-				{#if !show}
-					<div
-						class="absolute top-1/2 left-1/2 z-10 -translate-1/2 mix-blend-difference"
-						transition:fade={{ duration: 50 }}
-					>
-						<Play />
-					</div>
-				{/if}
+				<div
+					class={[
+						'absolute top-1/2 left-1/2 z-10 -translate-1/2 mix-blend-difference transition-opacity duration-50',
+						show ? 'opacity-0' : 'opacity-100'
+					]}
+				>
+					<Play />
+				</div>
 				<img
 					src="https://f4.bcbits.com/img/a306773275_1x1_700.avif"
 					alt="cover"
