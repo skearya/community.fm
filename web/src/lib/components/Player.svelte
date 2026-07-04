@@ -67,7 +67,7 @@
 			leftAnimation?.cancel();
 		}
 
-		if (leftElement) {
+		if (rightElement) {
 			rightElementPos = rightElement.getBoundingClientRect();
 			rightAnimation?.cancel();
 		}
@@ -109,11 +109,7 @@
 	{#if metadata?.cover}<link rel="icon" href={metadata.cover} />{/if}
 </svelte:head>
 
-<main
-	in:fade={{ duration: 125 }}
-	style="gap: clamp(30px, calc(30px + (100vh - 850px) * (60 - 30) / (1080 - 850)), 60px);"
-	class="mx-auto flex max-w-360 flex-col"
->
+<main in:fade={{ duration: 125 }} class="mx-auto max-w-360">
 	<nav class="flex items-center justify-between px-7.5 pt-8">
 		<div class="flex gap-x-3.75">
 			<img
@@ -160,20 +156,24 @@
 	</nav>
 
 	<div
+		style="height: clamp(30px, calc(30px + (100vh - 850px) * (60 - 30) / (1080 - 850)), 60px);"
+	></div>
+
+	<div
 		class={[
-			'mx-auto flex w-full max-w-288.5 flex-col items-center justify-start gap-y-26.25 px-7.5 pb-8 xl:flex-row xl:items-stretch',
-			show ? 'xl:justify-between' : 'xl:justify-center'
+			'mx-auto flex max-w-288.5 items-start px-7.5',
+			show ? 'justify-between' : 'justify-center'
 		]}
 	>
 		<div
 			bind:this={leftElement}
-			class="group z-10 flex max-w-125.75 flex-col items-start will-change-transform"
+			class="group z-10 flex w-125.75 flex-col items-stretch will-change-transform"
 			{title}
 		>
-			<p class="mb-1.5 self-stretch truncate text-[48px] leading-14.25 font-medium">
+			<p class="mb-1.5 truncate text-[48px] leading-14.25 font-medium">
 				{metadata?.title}
 			</p>
-			<p class="mb-7.5 self-stretch truncate text-[32px] leading-9.5 text-gray">
+			<p class="mb-7.5 truncate text-[32px] leading-9.5 text-gray">
 				{metadata?.artist}
 			</p>
 			<button
@@ -188,33 +188,36 @@
 					}
 				}}
 			>
-				<div
-					class={[
-						'absolute top-1/2 left-1/2 z-10 -translate-1/2 mix-blend-exclusion transition-opacity duration-100',
-						show ? 'opacity-0' : 'opacity-100'
-					]}
-				>
-					<Play />
-				</div>
 				<img
 					draggable="false"
 					src={metadata?.cover}
 					alt="cover"
 					class={[
-						'aspect-square min-h-0 flex-1 rounded-[83px] object-contain transition-[filter]',
+						'w-full min-w-0 rounded-[83px] object-cover transition-[filter]',
 						(!show || loading) && 'brightness-50'
 					]}
 				/>
+				<div
+					class={[
+						'absolute top-1/2 left-1/2 -translate-1/2 mix-blend-exclusion transition-opacity duration-100',
+						show ? 'opacity-0' : 'opacity-100'
+					]}
+				>
+					<Play />
+				</div>
 			</button>
 		</div>
 
 		<section
 			bind:this={rightElement}
-			class={['self-stretch will-change-transform xl:max-w-108.75', show ? 'block' : 'hidden']}
+			class={['mt-3.5 w-108.75 will-change-transform', show ? 'block' : 'hidden']}
 		>
 			<p class="mb-6 leading-4.75 tracking-[-0.02em] text-gray">Previous songs</p>
-			<div class="flex flex-col gap-y-4.25">
-				{#each { length: 5 }}
+			<div
+				style="scrollbar-width: none;"
+				class="max-h-144.5 snap-y space-y-4.25 overflow-y-auto rounded-2xl"
+			>
+				{#each { length: 50 }}
 					{@render previous()}
 				{/each}
 			</div>
@@ -223,7 +226,7 @@
 </main>
 
 {#snippet previous()}
-	<div class="flex gap-x-5.5">
+	<div class="flex snap-start gap-x-5.5">
 		<img
 			src="https://f4.bcbits.com/img/a3554352334_1x1_700.avif"
 			alt="cover"
