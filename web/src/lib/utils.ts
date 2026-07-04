@@ -1,4 +1,4 @@
-import type { IcecastMetadata } from './types';
+import type { IcecastMetadata } from '$lib/types';
 
 export function getListeners(status: IcecastMetadata) {
 	try {
@@ -7,4 +7,12 @@ export function getListeners(status: IcecastMetadata) {
 	} catch {
 		return 0;
 	}
+}
+
+export function wait(ms: number) {
+	return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+export function unreachable(state: unknown) {
+	throw new Error(`${state}`);
 }

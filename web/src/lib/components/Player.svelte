@@ -124,6 +124,16 @@
 					<Arrow />
 				</div>
 			</div>
+			<div class="ml-25 flex gap-x-12.5">
+				<div>
+					<p class="text-[22px] leading-6.5 tracking-wide text-gray">Times played</p>
+					<p class="text-[22px] leading-6.5 tracking-wide">10,8378</p>
+				</div>
+				<div>
+					<p class="text-[22px] leading-6.5 tracking-wide text-gray">Times played</p>
+					<p class="text-[22px] leading-6.5 tracking-wide">10,8378</p>
+				</div>
+			</div>
 		</div>
 		<div class="flex items-center gap-x-3 text-nowrap">
 			<div class="flex gap-x-1.5 rounded-[59px] bg-foreground px-5 py-3.75 text-background">
@@ -171,13 +181,13 @@
 			{title}
 		>
 			<p class="mb-1.5 truncate text-[48px] leading-14.25 font-medium">
-				{metadata?.title}
+				{metadata?.title ?? 'Unknown Title'}
 			</p>
 			<p class="mb-7.5 truncate text-[32px] leading-9.5 text-gray">
-				{metadata?.artist}
+				{metadata?.artist ?? 'Unknown Artist'}
 			</p>
 			<button
-				class="relative transition-transform active:scale-95"
+				class="relative overflow-hidden rounded-[83px] transition-transform active:scale-95"
 				onclick={() => {
 					show = !show;
 
@@ -188,15 +198,24 @@
 					}
 				}}
 			>
-				<img
-					draggable="false"
-					src={metadata?.cover}
-					alt="cover"
-					class={[
-						'w-full min-w-0 rounded-[83px] object-cover transition-[filter]',
-						(!show || loading) && 'brightness-50'
-					]}
-				/>
+				{#if metadata?.cover}
+					<img
+						src={metadata.cover}
+						alt="cover"
+						draggable="false"
+						class={[
+							'w-full min-w-0 object-cover transition-[filter]',
+							(!show || loading) && 'brightness-50'
+						]}
+					/>
+				{:else}
+					<div
+						class={[
+							'aspect-square w-full bg-gray transition-[filter]',
+							(!show || loading) && 'brightness-50'
+						]}
+					></div>
+				{/if}
 				<div
 					class={[
 						'absolute top-1/2 left-1/2 -translate-1/2 mix-blend-exclusion transition-opacity duration-100',

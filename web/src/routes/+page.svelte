@@ -3,6 +3,8 @@
 	import type { Data, Message } from '$lib/types';
 	import { onMount } from 'svelte';
 	import Player from '$lib/components/Player.svelte';
+	import { unreachable, wait } from '$lib/utils';
+	import { fade } from 'svelte/transition';
 
 	let { data }: PageProps = $props();
 
@@ -50,6 +52,23 @@
 	});
 </script>
 
-{#if connection.type === 'awaiting'}{:else if connection.type === 'connected'}{:else if connection.type === 'ready'}
+{#if connection.type === 'awaiting' || connection.type === 'connected'}
+	{#await wait(300) then}
+		{@render message('Loading...')}
+	{/await}
+{:else if connection.type === 'ready'}
 	<Player {...connection.data} />
-{:else if connection.type === 'error'}{:else if connection satisfies never}{/if}
+{:else if connection.type === 'error'}
+	{@render message(`Error: ${connection.reason}`)}
+{:else if connection satisfies never}
+	{unreachable(connection)}
+{/if}
+
+{#snippet message(text: string)}
+	<main
+		transition:fade={{ duration: 125 }}
+		class="flex h-screen items-center justify-center text-lg"
+	>
+		<p>{text}</p>
+	</main>
+{/snippet}
