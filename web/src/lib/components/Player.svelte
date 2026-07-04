@@ -3,10 +3,8 @@
 	import { fade } from 'svelte/transition';
 	import Arrow from '$lib/icons/Arrow.svelte';
 	import Circle from '$lib/icons/Circle.svelte';
-	import Down from '$lib/icons/Down.svelte';
 	import Person from '$lib/icons/Person.svelte';
 	import Play from '$lib/icons/Play.svelte';
-	import Up from '$lib/icons/Up.svelte';
 	import Volume from '$lib/icons/Volume.svelte';
 	import { flip, cloneOver } from '$lib/animation';
 	import { getListeners } from '$lib/utils';
@@ -113,7 +111,7 @@
 
 <main
 	in:fade={{ duration: 125 }}
-	style="gap: clamp(30px, calc(30px + (100vh - 850px) * 30 / (1080 - 850)), 60px);"
+	style="gap: clamp(30px, calc(30px + (100vh - 850px) * (60 - 30) / (1080 - 850)), 60px);"
 	class="mx-auto flex max-w-360 flex-col"
 >
 	<nav class="flex items-center justify-between px-7.5 pt-8">
@@ -126,7 +124,7 @@
 			<div>
 				<p class="text-[22px] leading-6.5 tracking-wide text-gray">DJ</p>
 				<div class="flex items-center">
-					<p class="text-[22px] leading-6.5 tracking-wide">Skeary</p>
+					<p class="text-[22px] leading-6.5 tracking-wide">skeary</p>
 					<Arrow />
 				</div>
 			</div>
@@ -169,11 +167,15 @@
 	>
 		<div
 			bind:this={leftElement}
-			class="group z-10 flex flex-col items-start will-change-transform"
+			class="group z-10 flex max-w-125.75 flex-col items-start will-change-transform"
 			{title}
 		>
-			<p class="mb-1.5 truncate text-[48px] leading-14.25 font-medium">{metadata?.title}</p>
-			<p class="mb-7.5 truncate text-[32px] leading-9.5 text-gray">{metadata?.artist}</p>
+			<p class="mb-1.5 self-stretch truncate text-[48px] leading-14.25 font-medium">
+				{metadata?.title}
+			</p>
+			<p class="mb-7.5 self-stretch truncate text-[32px] leading-9.5 text-gray">
+				{metadata?.artist}
+			</p>
 			<button
 				class="relative transition-transform active:scale-95"
 				onclick={() => {
@@ -188,7 +190,7 @@
 			>
 				<div
 					class={[
-						'absolute top-1/2 left-1/2 z-10 -translate-1/2 mix-blend-difference transition-opacity duration-50',
+						'absolute top-1/2 left-1/2 z-10 -translate-1/2 mix-blend-exclusion transition-opacity duration-100',
 						show ? 'opacity-0' : 'opacity-100'
 					]}
 				>
@@ -199,7 +201,7 @@
 					src={metadata?.cover}
 					alt="cover"
 					class={[
-						'aspect-square max-h-125.75 min-h-0 rounded-[83px] object-contain transition-[filter]',
+						'aspect-square min-h-0 flex-1 rounded-[83px] object-contain transition-[filter]',
 						(!show || loading) && 'brightness-50'
 					]}
 				/>
@@ -228,18 +230,14 @@
 			class="size-25.5 rounded-2xl"
 		/>
 		<div class="min-w-0 flex-1">
-			<div class="mb-3 text-[22px] leading-7.5">
+			<div class="mb-3.5 text-[22px] leading-7.5">
 				<p class="truncate">Nothing Even Matters (D’Angelo)</p>
 				<p class="truncate text-gray">Ms. Lauryn Hill</p>
 			</div>
 			<div class="flex gap-x-3.25">
-				<div class="flex items-center gap-1.25">
-					<Up />
-					<p class="text-[22px] leading-6.5">11</p>
-				</div>
-				<div class="flex items-center gap-1.25">
-					<Down />
-					<p class="text-[22px] leading-6.5">2</p>
+				<div class="flex items-center gap-x-1.25 text-gray">
+					<Person />
+					<p>skeary</p>
 				</div>
 			</div>
 		</div>

@@ -1,10 +1,17 @@
+<script lang="ts">
+	import type { SvelteHTMLElements } from 'svelte/elements';
+
+	const { width = 128, height = 128, ...rest }: SvelteHTMLElements['svg'] = $props();
+</script>
+
 <svg
-	fill="#FFFFFF"
-	width="128"
-	height="128"
+	{width}
+	{height}
+	fill="#ffffff"
 	viewBox="0 0 32 32"
 	version="1.1"
 	xmlns="http://www.w3.org/2000/svg"
+	{...rest}
 	><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g
 		id="SVGRepo_tracerCarrier"
 		stroke-linecap="round"
