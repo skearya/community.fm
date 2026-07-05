@@ -40,6 +40,7 @@ class LastFMMode(RadioMode):
         self.lastfm = lastfm
         self.period = options["period"]
         self.top: dict[User, list[LastFMItem]] = {}
+        self.avatars: dict[User, str | None] = {}
 
     async def setup(self) -> None:
         if not (users := await self.state.db.get_users()):
@@ -51,6 +52,7 @@ class LastFMMode(RadioMode):
         )
 
         self.top = {user: await self.gettoptracks(user) for user in users}
+        self.avatars = {user: await self.getinfo(user) for user in users}
 
         logger.info(f"Got Last.fm '{self.period}' top tracks.")
 
@@ -74,9 +76,15 @@ class LastFMMode(RadioMode):
         logger.debug(f"Fetching Last.fm item: {item.track}")
 
         if dl := await self.state.pls.give(item.track):
+            avatar = self.avatars[user]
+
             return LiquidsoapUri(
                 dl.path,
-                {"user": user.lastfm_username, "playcount": str(item.playcount)},
+                {
+                    "user": user.lastfm_username,
+                    "playcount": str(item.playcount),
+                    **({"avatar": avatar} if avatar else {}),
+                },
                 True,
             )
 
@@ -122,3 +130,18 @@ class LastFMMode(RadioMode):
                 return items
 
             page += 1
+
+    async def getinfo(self, user: User) -> str | None:
+        getinfo = await self.lastfm.api(
+            {
+                "method": "user.getinfo",
+                "user": user.lastfm_username,
+                "sk": user.lastfm_session,
+            }
+        )
+
+        if not getinfo:
+            logger.error(f"Failed getting last.fm user info for {user.id}")
+            return None
+
+        return getinfo["user"]["image"][-1]["#text"] or None

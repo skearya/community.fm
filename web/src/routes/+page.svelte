@@ -49,6 +49,8 @@
 			console.error('Connection failed', event);
 			connection = { type: 'error', reason: `${eventSource.readyState}` };
 		});
+
+		return () => eventSource.close();
 	});
 </script>
 

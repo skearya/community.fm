@@ -6,6 +6,7 @@ from pls import Track
 @dataclass
 class ChannelModeEntry:
     username: str
+    avatar_url: str
     tracks: list[Track]
 
 
@@ -28,6 +29,7 @@ class LiquidsoapMetadata:
     coverart: str | None = None
     cover: str | None = None
     user: str | None = None
+    avatar: str | None = None
     mode: str | None = None
     playcount: str | None = None
 

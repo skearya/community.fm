@@ -8,6 +8,7 @@
 	import Volume from '$lib/icons/Volume.svelte';
 	import { flip, cloneOver } from '$lib/animation';
 	import { getListeners } from '$lib/utils';
+	import { onDestroy } from 'svelte';
 
 	let { stream, metadata, status, modes }: Data = $props();
 
@@ -61,24 +62,15 @@
 
 	let leftElement: HTMLElement;
 	let leftElementPos: DOMRect | null = null;
-	let leftAnimation: Animation | null = null;
 
 	let rightElement: HTMLElement;
 	let rightElementPos: DOMRect | null = null;
-	let rightAnimation: Animation | null = null;
 
 	$effect.pre(() => {
 		void show;
 
-		if (leftElement) {
-			leftElementPos = leftElement.getBoundingClientRect();
-			leftAnimation?.cancel();
-		}
-
-		if (rightElement) {
-			rightElementPos = rightElement.getBoundingClientRect();
-			rightAnimation?.cancel();
-		}
+		if (leftElement) leftElementPos = leftElement.getBoundingClientRect();
+		if (rightElement) rightElementPos = rightElement.getBoundingClientRect();
 	});
 
 	$effect(() => {
@@ -86,30 +78,44 @@
 
 		if (!leftElementPos || !rightElementPos) return;
 
-		const leftElementCurrentPos = leftElement.getBoundingClientRect();
+		const animations: Animation[] = [];
 
-		leftAnimation = flip(
-			leftElement,
-			{ from: leftElementPos, to: leftElementCurrentPos },
-			{ duration: 500, easing: easeOut }
+		animations.push(
+			flip(
+				leftElement,
+				{ from: leftElementPos, to: leftElement.getBoundingClientRect() },
+				{ duration: 500, easing: easeOut }
+			)
 		);
 
 		if (show) {
-			rightAnimation = rightElement.animate(
-				{ opacity: ['0%', '100%'], scale: ['90%', '100%'] },
-				{ duration: 500, easing: easeOut }
+			animations.push(
+				rightElement.animate(
+					{ opacity: ['0%', '100%'], scale: ['90%', '100%'] },
+					{ duration: 500, easing: easeOut }
+				)
 			);
 		} else {
 			const rightElementClone = cloneOver(rightElement, rightElementPos);
 			rightElementClone.style.display = 'block';
 
-			rightElementClone
-				.animate({ opacity: ['100%', '0%'], scale: '90%' }, { duration: 500, easing: easeOut })
-				.addEventListener('finish', () => rightElementClone.remove());
+			const rightElementAnimation = rightElementClone.animate(
+				{ opacity: ['100%', '0%'], scale: '90%' },
+				{ duration: 500, easing: easeOut }
+			);
+
+			rightElementAnimation.addEventListener('finish', () => rightElementClone.remove());
+			rightElementAnimation.addEventListener('cancel', () => rightElementClone.remove());
+
+			animations.push(rightElementAnimation);
 		}
+
+		return () => animations.forEach((a) => a.cancel());
 	});
 
 	let title = $derived(`${metadata?.title} - ${metadata?.artist}`);
+
+	onDestroy(() => disconnect());
 </script>
 
 <svelte:head>
@@ -119,20 +125,20 @@
 
 <main in:fade={{ duration: 125 }} class="mx-auto max-w-360">
 	<nav class="flex items-center justify-between px-7.5 pt-8">
-		<div class="flex gap-x-3.75">
-			<img
-				src="https://f4.bcbits.com/img/a3554352334_1x1_700.avif"
-				alt="avatar"
-				class="size-12.75 rounded-full"
-			/>
-			<div>
-				<p class="text-[22px] leading-6.5 tracking-wide text-gray">DJ</p>
-				<div class="flex items-center">
-					<p class="text-[22px] leading-6.5 tracking-wide">{metadata?.user}</p>
-					<Arrow />
+		{#if metadata?.user}
+			<div class="flex gap-x-3.75">
+				{#if metadata?.avatar}
+					<img src={metadata.avatar} alt="avatar" class="size-12.75 rounded-full" />
+				{/if}
+				<div>
+					<p class="text-[22px] leading-6.5 tracking-wide text-gray">DJ</p>
+					<div class="flex items-center">
+						<p class="text-[22px] leading-6.5 tracking-wide">{metadata?.user}</p>
+						<Arrow />
+					</div>
 				</div>
 			</div>
-		</div>
+		{/if}
 		<div class="ml-20 flex flex-1 justify-start gap-x-12.5">
 			{#each [['Play Count', metadata?.playcount]] as const as [name, value] (name)}
 				{#if value}
