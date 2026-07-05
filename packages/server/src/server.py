@@ -64,8 +64,8 @@ async def handle_get_subscribe(request: web.Request) -> web.StreamResponse:
     try:
         async with (
             sse_response(request) as resp,
-            state.liquidsoap.subscribe() as metadata_queue,
-            state.icecast.subscribe() as status_queue,
+            state.liquidsoap.subscribe() as liquidsoap_queue,
+            state.icecast.subscribe() as icecast_queue,
         ):
             info: InfoMessage = {
                 "type": "info",
@@ -88,8 +88,8 @@ async def handle_get_subscribe(request: web.Request) -> web.StreamResponse:
                         await resp.send(json.dumps(message))
 
             await asyncio.gather(
-                forward(metadata_queue, "liquidsoap", True),
-                forward(status_queue, "icecast", False),
+                forward(liquidsoap_queue, "liquidsoap", True),
+                forward(icecast_queue, "icecast", False),
             )
     except ClientConnectionResetError:
         pass
