@@ -90,7 +90,7 @@ class Stream(commands.Cog):
     )
     @app_commands.guild_only()
     async def now_playing(self, interaction: Interaction):
-        metadata = self.bot.state.metadata.value
+        metadata = self.bot.state.liquidsoap.value
 
         if metadata is None:
             await interaction.response.send_message(
@@ -168,7 +168,7 @@ class Stream(commands.Cog):
             await interaction.response.send_message("Skipped.")
 
     async def status_updater(self):
-        async with self.bot.state.metadata.subscribe() as queue:
+        async with self.bot.state.liquidsoap.subscribe() as queue:
             while True:
                 metadata = await queue.get()
 

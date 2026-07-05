@@ -19,7 +19,7 @@ async def icecast_poller(state: State):
                 response.raise_for_status()
                 data = await response.json()
 
-                state.status.update(data)
+                state.icecast.update(data)
         except Exception as e:
             logger.debug(f"Icecast poll error: {e}")
 

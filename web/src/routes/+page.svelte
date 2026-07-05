@@ -30,15 +30,15 @@
 				case 'info':
 					connection = { type: 'ready', data: message };
 					break;
-				case 'metadata':
+				case 'liquidsoap':
 					if (connection.type !== 'ready') throw new Error();
 
-					connection.data.metadata = message.metadata;
+					connection.data.liquidsoap = message.liquidsoap;
 					break;
-				case 'status':
+				case 'icecast':
 					if (connection.type !== 'ready') throw new Error();
 
-					connection.data.status = message.status;
+					connection.data.icecast = message.status;
 					break;
 				default:
 					message satisfies never;

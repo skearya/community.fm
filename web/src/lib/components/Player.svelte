@@ -10,7 +10,7 @@
 	import { getListeners } from '$lib/utils';
 	import { onDestroy } from 'svelte';
 
-	let { stream, metadata, status, modes }: Data = $props();
+	let { stream, liquidsoap: metadata, icecast, modes }: Data = $props();
 
 	let show = $state(false);
 	let loading = $state(false);
@@ -152,7 +152,7 @@
 		<div class="flex items-center gap-x-3 text-nowrap">
 			<div class="flex gap-x-1.5 rounded-[59px] bg-foreground px-5 py-3.75 text-background">
 				<Person />
-				<p class="text-[22px] leading-6.5 tracking-wide">{getListeners(status)} Listeners</p>
+				<p class="text-[22px] leading-6.5 tracking-wide">{getListeners(icecast)} Listeners</p>
 			</div>
 			<div class="flex gap-x-1.5 rounded-[59px] bg-red px-5 py-3.75 text-background">
 				<Circle />
