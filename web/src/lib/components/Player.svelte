@@ -26,8 +26,16 @@
 
 		loading = true;
 
-		audio.load();
-		await audio.play();
+		try {
+			audio.load();
+			await audio.play();
+		} catch {
+			audio.src =
+				new URL('stream.mp3', stream) + '?' + new URLSearchParams({ cache: `${Date.now()}` });
+
+			audio.load();
+			await audio.play();
+		}
 
 		loading = false;
 	}
@@ -120,20 +128,20 @@
 			<div>
 				<p class="text-[22px] leading-6.5 tracking-wide text-gray">DJ</p>
 				<div class="flex items-center">
-					<p class="text-[22px] leading-6.5 tracking-wide">skeary</p>
+					<p class="text-[22px] leading-6.5 tracking-wide">{metadata?.user}</p>
 					<Arrow />
 				</div>
 			</div>
-			<div class="ml-25 flex gap-x-12.5">
-				<div>
-					<p class="text-[22px] leading-6.5 tracking-wide text-gray">Times played</p>
-					<p class="text-[22px] leading-6.5 tracking-wide">10,8378</p>
-				</div>
-				<div>
-					<p class="text-[22px] leading-6.5 tracking-wide text-gray">Times played</p>
-					<p class="text-[22px] leading-6.5 tracking-wide">10,8378</p>
-				</div>
-			</div>
+		</div>
+		<div class="ml-20 flex flex-1 justify-start gap-x-12.5">
+			{#each [['Play Count', metadata?.playcount]] as const as [name, value] (name)}
+				{#if value}
+					<div>
+						<p class="text-[22px] leading-6.5 tracking-wide text-gray">{name}</p>
+						<p class="text-[22px] leading-6.5 tracking-wide">{value}</p>
+					</div>
+				{/if}
+			{/each}
 		</div>
 		<div class="flex items-center gap-x-3 text-nowrap">
 			<div class="flex gap-x-1.5 rounded-[59px] bg-foreground px-5 py-3.75 text-background">
@@ -142,7 +150,7 @@
 			</div>
 			<div class="flex gap-x-1.5 rounded-[59px] bg-red px-5 py-3.75 text-background">
 				<Circle />
-				<p class="text-[22px] leading-6.5 tracking-wide">Live</p>
+				<p class="text-[22px] leading-6.5 tracking-wide">{metadata?.mode}</p>
 			</div>
 			<button
 				class="group relative flex gap-x-1.5 rounded-[59px] bg-light-gray px-5 py-3.75 text-background"
