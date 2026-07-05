@@ -42,9 +42,10 @@ async def handle_update_metadata(request: web.Request) -> web.Response:
 class InfoMessage(TypedDict):
     type: Literal["info"]
     stream: str
+    modes: list[str]
+    history: list[tuple[dict[str, Any], int | float]]
     liquidsoap: dict[str, Any]
     icecast: object
-    modes: list[str]
 
 
 class LiquidsoapMessage(TypedDict):
@@ -70,9 +71,10 @@ async def handle_get_subscribe(request: web.Request) -> web.StreamResponse:
             info: InfoMessage = {
                 "type": "info",
                 "stream": state.config.STREAM_BASE_URL,
+                "modes": [mode.name for mode in state.manager.modes],
+                "history": [(asdict(track), time) for track, time in state.history],
                 "liquidsoap": asdict(state.liquidsoap.value),
                 "icecast": state.icecast.value,
-                "modes": [mode.name for mode in state.manager.modes],
             }
 
             await resp.send(json.dumps(info))

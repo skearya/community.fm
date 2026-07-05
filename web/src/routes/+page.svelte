@@ -1,12 +1,9 @@
 <script lang="ts">
-	import type { PageProps } from './$types';
 	import type { Data, Message } from '$lib/types';
 	import { onMount } from 'svelte';
 	import Player from '$lib/components/Player.svelte';
 	import { unreachable, wait } from '$lib/utils';
 	import { fade } from 'svelte/transition';
-
-	let { data }: PageProps = $props();
 
 	type Connection =
 		| { type: 'awaiting' }
@@ -38,7 +35,7 @@
 				case 'icecast':
 					if (connection.type !== 'ready') throw new Error();
 
-					connection.data.icecast = message.status;
+					connection.data.icecast = message.icecast;
 					break;
 				default:
 					message satisfies never;

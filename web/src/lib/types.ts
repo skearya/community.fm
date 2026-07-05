@@ -1,15 +1,16 @@
 export type Data = {
 	stream: string;
-	liquidsoap: LiquidsoapMetadata | null;
-	icecast: IcecastMetadata | null;
 	modes: string[];
+	history: [LiquidsoapMetadata, number][];
+	liquidsoap: LiquidsoapMetadata;
+	icecast: IcecastMetadata;
 };
 
 /// Based on `packages/server/src/server.py`
 export type Message =
 	| ({ type: 'info' } & Data)
 	| { type: 'liquidsoap'; liquidsoap: LiquidsoapMetadata }
-	| { type: 'icecast'; status: IcecastMetadata };
+	| { type: 'icecast'; icecast: IcecastMetadata };
 
 /// Based on `packages/server/src/models.py`
 export type LiquidsoapMetadata = Partial<{

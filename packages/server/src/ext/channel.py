@@ -99,8 +99,9 @@ class ChannelIngester(commands.Cog):
                 return None
 
             entries[message.author.id] = ChannelModeEntry(
-                message.author.name, message.author.display_avatar.url, tracks
+                message.author.display_name, message.author.display_avatar.url, tracks
             )
+
             return len(tracks)
         except Exception:
             logger.exception("Failed to ingest channel attachment")

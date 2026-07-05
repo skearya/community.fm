@@ -1,16 +1,16 @@
 <script lang="ts">
-	import type { Data } from '$lib/types';
+	import type { Data, LiquidsoapMetadata } from '$lib/types';
+	import { onDestroy } from 'svelte';
 	import { fade } from 'svelte/transition';
-	import Arrow from '$lib/icons/Arrow.svelte';
 	import Circle from '$lib/icons/Circle.svelte';
 	import Person from '$lib/icons/Person.svelte';
 	import Play from '$lib/icons/Play.svelte';
 	import Volume from '$lib/icons/Volume.svelte';
+	import Avatar from '$lib/components/Avatar.svelte';
 	import { flip, cloneOver } from '$lib/animation';
 	import { getListeners } from '$lib/utils';
-	import { onDestroy } from 'svelte';
 
-	let { stream, liquidsoap: metadata, icecast, modes }: Data = $props();
+	let { stream, history, liquidsoap: metadata, icecast }: Data = $props();
 
 	let show = $state(false);
 	let loading = $state(false);
@@ -127,20 +127,15 @@
 	<nav class="flex items-center justify-between px-7.5 pt-8">
 		{#if metadata?.user}
 			<div class="flex gap-x-3.75">
-				{#if metadata?.avatar}
-					<img src={metadata.avatar} alt="avatar" class="size-12.75 rounded-full" />
-				{/if}
+				<Avatar username={metadata.user} avatarUrl={metadata?.avatar} class="size-12.75" />
 				<div>
 					<p class="text-[22px] leading-6.5 tracking-wide text-gray">DJ</p>
-					<div class="flex items-center">
-						<p class="text-[22px] leading-6.5 tracking-wide">{metadata?.user}</p>
-						<Arrow />
-					</div>
+					<p class="text-[22px] leading-6.5 tracking-wide">{metadata?.user}</p>
 				</div>
 			</div>
 		{/if}
 		<div class="ml-20 flex flex-1 justify-start gap-x-12.5">
-			{#each [['Play Count', metadata?.playcount]] as const as [name, value] (name)}
+			{#each [['Play Count', metadata?.playcount]] as [name, value] (name)}
 				{#if value}
 					<div>
 						<p class="text-[22px] leading-6.5 tracking-wide text-gray">{name}</p>
@@ -223,12 +218,14 @@
 						]}
 					/>
 				{:else}
-					<div
+					<Avatar
+						username={metadata?.title ?? '?'}
+						rounded={false}
 						class={[
-							'aspect-square w-full bg-gray transition-[filter]',
+							'aspect-square w-full min-w-0 transition-[filter]',
 							(!show || loading) && 'brightness-50'
 						]}
-					></div>
+					/>
 				{/if}
 				<div
 					class={[
@@ -250,31 +247,43 @@
 				style="scrollbar-width: none;"
 				class="max-h-144.5 snap-y space-y-4.25 overflow-y-auto rounded-2xl"
 			>
-				{#each { length: 50 }}
-					{@render previous()}
+				{#each history as [track, time] (time)}
+					{@render previous(track)}
+				{:else}
+					<p>...</p>
 				{/each}
 			</div>
 		</section>
 	</div>
 </main>
 
-{#snippet previous()}
+{#snippet previous(metadata: LiquidsoapMetadata)}
 	<div class="flex snap-start gap-x-5.5">
-		<img
-			src="https://f4.bcbits.com/img/a3554352334_1x1_700.avif"
-			alt="cover"
-			class="size-25.5 rounded-2xl"
-		/>
+		{#if metadata?.cover}
+			<img
+				src={metadata.cover}
+				alt="cover"
+				class="aspect-square size-25.5 rounded-2xl object-cover"
+			/>
+		{:else}
+			<Avatar
+				username={metadata?.title ?? 'Unknown'}
+				rounded={false}
+				class="size-25.5 rounded-2xl"
+			/>
+		{/if}
 		<div class="min-w-0 flex-1">
 			<div class="mb-3.5 text-[22px] leading-7.5">
-				<p class="truncate">Nothing Even Matters (D’Angelo)</p>
-				<p class="truncate text-gray">Ms. Lauryn Hill</p>
+				<p class="truncate">{metadata.title}</p>
+				<p class="truncate text-gray">{metadata.artist}</p>
 			</div>
 			<div class="flex gap-x-3.25">
-				<div class="flex items-center gap-x-1.25 text-gray">
-					<Person />
-					<p>skeary</p>
-				</div>
+				{#if metadata?.user}
+					<div class="flex items-center gap-x-2.25 text-gray">
+						<Avatar username={metadata.user} avatarUrl={metadata?.avatar} class="size-6" />
+						<p>{metadata.user}</p>
+					</div>
+				{/if}
 			</div>
 		</div>
 	</div>
