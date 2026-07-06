@@ -12,6 +12,10 @@
 
 	let { stream, history, liquidsoap: metadata, icecast }: Data = $props();
 
+	let leftElement: HTMLElement;
+	let rightElement: HTMLElement;
+	let historyElement: HTMLElement;
+
 	let show = $state(false);
 	let loading = $state(false);
 	let volumeLevel = $state(50);
@@ -58,12 +62,17 @@
 		}
 	});
 
+	$effect(() => {
+		void trackHistory.length;
+
+		if (historyElement) {
+			historyElement.scrollTo({ top: 0, behavior: 'smooth' });
+		}
+	});
+
 	const easeOut = 'cubic-bezier(0.23, 1, 0.32, 1)';
 
-	let leftElement: HTMLElement;
 	let leftElementPos: DOMRect | null = null;
-
-	let rightElement: HTMLElement;
 	let rightElementPos: DOMRect | null = null;
 
 	$effect.pre(() => {
@@ -114,6 +123,7 @@
 	});
 
 	let title = $derived(`${metadata?.title} - ${metadata?.artist}`);
+	let trackHistory = $derived(history.toReversed().slice(1));
 
 	onDestroy(() => disconnect());
 </script>
@@ -244,10 +254,11 @@
 		>
 			<p class="mb-6 leading-4.75 tracking-[-0.02em] text-gray">Previous songs</p>
 			<div
+				bind:this={historyElement}
 				style="scrollbar-width: none;"
 				class="max-h-144.5 snap-y space-y-4.25 overflow-y-auto rounded-2xl"
 			>
-				{#each history as [track, time] (time)}
+				{#each trackHistory as [track, time] (time)}
 					{@render previous(track)}
 				{:else}
 					<p>...</p>

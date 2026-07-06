@@ -92,12 +92,6 @@ class Stream(commands.Cog):
     async def now_playing(self, interaction: Interaction):
         metadata = self.bot.state.liquidsoap.value
 
-        if metadata is None:
-            await interaction.response.send_message(
-                "The radio is currently initializing, or something is going very wrong."
-            )
-            return
-
         embed = discord.Embed(
             title=f"{metadata.artist or 'Unknown Artist'} - {metadata.title or 'Unknown Title'}"
         )
