@@ -137,7 +137,7 @@
 	<nav class="flex items-center justify-between px-7.5 pt-8">
 		{#if metadata?.user}
 			<div class="flex gap-x-3.75">
-				<Avatar username={metadata.user} avatarUrl={metadata?.avatar} class="size-12.75" />
+				<Avatar username={metadata.user} url={metadata?.avatar} class="size-12.75" />
 				<div>
 					<p class="text-[22px] leading-6.5 tracking-wide text-gray">DJ</p>
 					<p class="text-[22px] leading-6.5 tracking-wide">{metadata?.user}</p>
@@ -217,26 +217,17 @@
 					}
 				}}
 			>
-				{#if metadata?.cover}
-					<img
-						src={metadata.cover}
-						alt="cover"
-						draggable="false"
-						class={[
-							'w-full min-w-0 object-cover transition-[filter]',
-							(!show || loading) && 'brightness-50'
-						]}
-					/>
-				{:else}
-					<Avatar
-						username={metadata?.title ?? '?'}
-						rounded={false}
-						class={[
-							'aspect-square w-full min-w-0 transition-[filter]',
-							(!show || loading) && 'brightness-50'
-						]}
-					/>
-				{/if}
+				<Avatar
+					url={metadata?.cover}
+					username={metadata?.title ?? '?'}
+					rounded={false}
+					draggable={false}
+					class={[
+						'w-full min-w-0 object-cover transition-[filter]',
+						(!show || loading) && 'brightness-50',
+						!metadata?.cover && 'aspect-square'
+					]}
+				/>
 				<div
 					class={[
 						'absolute top-1/2 left-1/2 -translate-1/2 mix-blend-exclusion transition-opacity duration-100',
@@ -270,19 +261,12 @@
 
 {#snippet previous(metadata: LiquidsoapMetadata)}
 	<div class="flex snap-start gap-x-5.5">
-		{#if metadata?.cover}
-			<img
-				src={metadata.cover}
-				alt="cover"
-				class="aspect-square size-25.5 rounded-2xl object-cover"
-			/>
-		{:else}
-			<Avatar
-				username={metadata?.title ?? 'Unknown'}
-				rounded={false}
-				class="size-25.5 rounded-2xl"
-			/>
-		{/if}
+		<Avatar
+			url={metadata?.cover}
+			username={metadata?.title ?? 'Unknown'}
+			rounded={false}
+			class="aspect-square size-25.5 rounded-2xl object-cover"
+		/>
 		<div class="min-w-0 flex-1">
 			<div class="mb-3.5 text-[22px] leading-7.5">
 				<p class="truncate">{metadata.title}</p>
@@ -291,7 +275,7 @@
 			<div class="flex gap-x-3.25">
 				{#if metadata?.user}
 					<div class="flex items-center gap-x-2.25 text-gray">
-						<Avatar username={metadata.user} avatarUrl={metadata?.avatar} class="size-6" />
+						<Avatar url={metadata?.avatar} username={metadata.user} class="size-6" />
 						<p>{metadata.user}</p>
 					</div>
 				{/if}

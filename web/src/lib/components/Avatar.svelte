@@ -31,23 +31,23 @@
 	import type { SvelteHTMLElements } from 'svelte/elements';
 
 	let {
+		url,
 		username,
-		avatarUrl,
 		rounded = true,
 		class: className,
 		...rest
 	}: {
+		url?: string;
 		username: string;
 		rounded?: boolean;
-		avatarUrl?: string;
 	} & SvelteHTMLElements['img'] &
 		SvelteHTMLElements['svg'] = $props();
 
 	const containerClass = () => [rounded && 'rounded-full', className];
 </script>
 
-{#if avatarUrl}
-	<img src={avatarUrl} alt={username} class={containerClass()} {...rest} />
+{#if url}
+	<img src={url} alt={username} class={containerClass()} {...rest} />
 {:else}
 	{@const { fromColor, toColor } = generateGradient(username)}
 	{@const id = crypto.randomUUID()}
