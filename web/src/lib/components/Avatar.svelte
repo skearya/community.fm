@@ -41,7 +41,7 @@
 		username: string;
 		rounded?: boolean;
 	} & SvelteHTMLElements['img'] &
-		SvelteHTMLElements['svg'] = $props();
+		SvelteHTMLElements['div'] = $props();
 
 	const containerClass = () => [rounded && 'rounded-full', className];
 </script>
@@ -50,23 +50,10 @@
 	<img src={url} alt={username} class={containerClass()} {...rest} />
 {:else}
 	{@const { fromColor, toColor } = generateGradient(username)}
-	{@const id = crypto.randomUUID()}
 
-	<svg
-		viewBox="0 0 120 120"
-		version="1.1"
-		xmlns="http://www.w3.org/2000/svg"
+	<div
 		class={containerClass()}
+		style={`background: linear-gradient(135deg, ${fromColor} 0%, ${toColor} 100%);`}
 		{...rest}
-	>
-		<g>
-			<defs>
-				<linearGradient {id} x1="0" y1="0" x2="1" y2="1">
-					<stop offset="0%" stop-color={fromColor} />
-					<stop offset="100%" stop-color={toColor} />
-				</linearGradient>
-			</defs>
-			<rect fill={`url(#${id})`} x="0" y="0" width="120" height="120" />
-		</g>
-	</svg>
+	></div>
 {/if}

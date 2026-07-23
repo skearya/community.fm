@@ -133,7 +133,7 @@
 	{#if metadata?.cover}<link rel="icon" href={metadata.cover} />{/if}
 </svelte:head>
 
-<main in:fade={{ duration: 125 }} class="mx-auto max-w-360">
+<main in:fade={{ duration: 125 }} class="mx-auto flex h-screen max-w-360 flex-col gap-8.75">
 	<nav class="flex items-center justify-between px-7.5 pt-8">
 		{#if metadata?.user}
 			<div class="flex gap-x-3.75">
@@ -185,12 +185,8 @@
 	</nav>
 
 	<div
-		style="height: clamp(30px, calc(30px + (100vh - 850px) * (60 - 30) / (1080 - 850)), 60px);"
-	></div>
-
-	<div
 		class={[
-			'mx-auto flex max-w-288.5 items-start px-7.5',
+			'mx-auto flex h-full w-full max-w-288.5 items-start overflow-y-hidden px-7.5',
 			show ? 'justify-between' : 'justify-center'
 		]}
 	>
@@ -241,13 +237,13 @@
 
 		<section
 			bind:this={rightElement}
-			class={['mt-3.5 w-108.75 will-change-transform', show ? 'block' : 'hidden']}
+			class={['h-full w-108.75 flex-col will-change-transform', show ? 'flex' : 'hidden']}
 		>
-			<p class="mb-6 leading-4.75 tracking-[-0.02em] text-gray">Previous songs</p>
+			<p class="mt-3.5 mb-6 leading-4.75 tracking-[-0.02em] text-gray">Previous songs</p>
 			<div
 				bind:this={historyElement}
 				style="scrollbar-width: none;"
-				class="max-h-144.5 snap-y space-y-4.25 overflow-y-auto rounded-2xl"
+				class="snap-y space-y-4.25 overflow-y-auto rounded-t-2xl pb-6"
 			>
 				{#each trackHistory as [track, time] (time)}
 					{@render previous(track)}
