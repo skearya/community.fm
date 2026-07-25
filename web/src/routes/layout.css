@@ -49,4 +49,8 @@
 		background-color: var(--color-background);
 		color: var(--color-foreground);
 	}
+
+	html {
+		font-size: clamp(14px, 0.8333333333vw, 16px);
+	}
 }
