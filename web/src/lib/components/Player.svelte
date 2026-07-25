@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Data, LiquidsoapMetadata } from '$lib/types';
-	import { onDestroy } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import { fade } from 'svelte/transition';
 	import Circle from '$lib/icons/Circle.svelte';
 	import Person from '$lib/icons/Person.svelte';
@@ -18,6 +18,37 @@
 	let volumeLevel = $state(50);
 
 	let audio: HTMLAudioElement | null = null;
+
+	onMount(() => {
+		const savedVolume = localStorage.getItem('volume');
+
+		if (savedVolume) {
+			volumeLevel = parseInt(savedVolume);
+		}
+	});
+
+	$effect(() => {
+		void volumeLevel;
+
+		if (audio !== null) {
+			audio.volume = volumeLevel / 100;
+		}
+
+		localStorage.setItem('volume', `${volumeLevel}`);
+	});
+
+	$effect(() => {
+		void trackHistory.length;
+
+		if (historyElement) {
+			historyElement.scrollTo({ top: 0, behavior: 'smooth' });
+		}
+	});
+
+	let title = $derived(`${metadata?.title} - ${metadata?.artist}`);
+	let trackHistory = $derived(history.toReversed().slice(1));
+
+	onDestroy(() => disconnect());
 
 	async function connect() {
 		audio = new Audio();
@@ -50,27 +81,6 @@
 		audio.removeAttribute('src');
 		audio = null;
 	}
-
-	$effect(() => {
-		void volumeLevel;
-
-		if (audio !== null) {
-			audio.volume = volumeLevel / 100;
-		}
-	});
-
-	$effect(() => {
-		void trackHistory.length;
-
-		if (historyElement) {
-			historyElement.scrollTo({ top: 0, behavior: 'smooth' });
-		}
-	});
-
-	let title = $derived(`${metadata?.title} - ${metadata?.artist}`);
-	let trackHistory = $derived(history.toReversed().slice(1));
-
-	onDestroy(() => disconnect());
 </script>
 
 <svelte:head>
