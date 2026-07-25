@@ -11,11 +11,3 @@
 </svelte:head>
 
 {@render children()}
-
-<style>
-	:global(body) {
-		font-family: 'Pretendard', sans-serif;
-		background-color: black;
-		color: white;
-	}
-</style>

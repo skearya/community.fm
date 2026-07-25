@@ -32,7 +32,7 @@ async def handle_update_metadata(request: web.Request) -> web.Response:
 
     metadata = LiquidsoapMetadata(**await request.json())
 
-    state.metadata.update(metadata)
+    state.liquidsoap.update(metadata)
     state.history.append((metadata, time.time()))
 
     logger.info(f"Received metadata update: {metadata.title}")
@@ -42,19 +42,20 @@ async def handle_update_metadata(request: web.Request) -> web.Response:
 class InfoMessage(TypedDict):
     type: Literal["info"]
     stream: str
-    metadata: dict[str, Any] | None
-    status: object | None
     modes: list[str]
+    history: list[tuple[dict[str, Any], int | float]]
+    liquidsoap: dict[str, Any]
+    icecast: object
 
 
-class MetadataMessage(TypedDict):
-    type: Literal["metadata"]
-    metadata: dict[str, Any]
+class LiquidsoapMessage(TypedDict):
+    type: Literal["liquidsoap"]
+    liquidsoap: dict[str, Any]
 
 
-class StatusMessage(TypedDict):
-    type: Literal["status"]
-    status: object
+class IcecastMessage(TypedDict):
+    type: Literal["icecast"]
+    icecast: object
 
 
 @public.get("/api/subscribe")
@@ -64,17 +65,16 @@ async def handle_get_subscribe(request: web.Request) -> web.StreamResponse:
     try:
         async with (
             sse_response(request) as resp,
-            state.metadata.subscribe() as metadata_queue,
-            state.status.subscribe() as status_queue,
+            state.liquidsoap.subscribe() as liquidsoap_queue,
+            state.icecast.subscribe() as icecast_queue,
         ):
             info: InfoMessage = {
                 "type": "info",
                 "stream": state.config.STREAM_BASE_URL,
-                "metadata": asdict(state.metadata.value)
-                if state.metadata.value
-                else None,
-                "status": state.status.value,
                 "modes": [mode.name for mode in state.manager.modes],
+                "history": [(asdict(track), time) for track, time in state.history],
+                "liquidsoap": asdict(state.liquidsoap.value),
+                "icecast": state.icecast.value,
             }
 
             await resp.send(json.dumps(info))
@@ -90,8 +90,8 @@ async def handle_get_subscribe(request: web.Request) -> web.StreamResponse:
                         await resp.send(json.dumps(message))
 
             await asyncio.gather(
-                forward(metadata_queue, "metadata", True),
-                forward(status_queue, "status", False),
+                forward(liquidsoap_queue, "liquidsoap", True),
+                forward(icecast_queue, "icecast", False),
             )
     except ClientConnectionResetError:
         pass

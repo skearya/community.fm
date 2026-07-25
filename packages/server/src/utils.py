@@ -13,10 +13,10 @@ class ConfigError(Exception):
 
 
 class Subscribable[T]:
-    value: T | None
+    value: T
     subscribers: set[asyncio.Queue[T]]
 
-    def __init__(self, initial: T | None = None):
+    def __init__(self, initial: T):
         self.value = initial
         self.subscribers = set()
 

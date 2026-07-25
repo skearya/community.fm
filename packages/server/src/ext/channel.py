@@ -1,5 +1,5 @@
-import plistlib
 import csv
+import plistlib
 from io import StringIO
 
 from bot import CustomBot
@@ -98,7 +98,10 @@ class ChannelIngester(commands.Cog):
             if not tracks:
                 return None
 
-            entries[message.author.id] = ChannelModeEntry(message.author.name, tracks)
+            entries[message.author.id] = ChannelModeEntry(
+                message.author.display_name, message.author.display_avatar.url, tracks
+            )
+
             return len(tracks)
         except Exception:
             logger.exception("Failed to ingest channel attachment")

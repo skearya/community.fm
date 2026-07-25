@@ -90,13 +90,7 @@ class Stream(commands.Cog):
     )
     @app_commands.guild_only()
     async def now_playing(self, interaction: Interaction):
-        metadata = self.bot.state.metadata.value
-
-        if metadata is None:
-            await interaction.response.send_message(
-                "The radio is currently initializing, or something is going very wrong."
-            )
-            return
+        metadata = self.bot.state.liquidsoap.value
 
         embed = discord.Embed(
             title=f"{metadata.artist or 'Unknown Artist'} - {metadata.title or 'Unknown Title'}"
@@ -168,7 +162,7 @@ class Stream(commands.Cog):
             await interaction.response.send_message("Skipped.")
 
     async def status_updater(self):
-        async with self.bot.state.metadata.subscribe() as queue:
+        async with self.bot.state.liquidsoap.subscribe() as queue:
             while True:
                 metadata = await queue.get()
 
