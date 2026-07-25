@@ -32,7 +32,7 @@ class State:
         self.icecast: Subscribable[object] = Subscribable({})
         self.liquidsoap: Subscribable[LiquidsoapMetadata] = Subscribable(
             LiquidsoapMetadata(
-                title="Initalizing", artist="community.fm", mode="Initializing"
+                title="Initializing", artist="community.fm", mode="Initializing"
             )
         )
 

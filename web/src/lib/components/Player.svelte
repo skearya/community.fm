@@ -23,7 +23,7 @@
 		const savedVolume = localStorage.getItem('volume');
 
 		if (savedVolume) {
-			volumeLevel = parseInt(savedVolume);
+			volumeLevel = parseFloat(savedVolume);
 		}
 	});
 
@@ -45,29 +45,27 @@
 		}
 	});
 
-	let title = $derived(`${metadata?.title} - ${metadata?.artist}`);
+	let title = $derived(`${metadata?.title ?? '?'} - ${metadata?.artist ?? '?'}`);
 	let trackHistory = $derived(history.toReversed().slice(1));
 
 	onDestroy(() => disconnect());
 
 	async function connect() {
-		audio = new Audio();
-		audio.preload = 'none';
-		audio.volume = volumeLevel / 100;
-		audio.src =
-			new URL('stream.ogg', stream) + '?' + new URLSearchParams({ cache: `${Date.now()}` });
+		if (audio || loading) return;
 
 		loading = true;
 
-		try {
-			audio.load();
-			await audio.play();
-		} catch {
-			audio.src =
-				new URL('stream.mp3', stream) + '?' + new URLSearchParams({ cache: `${Date.now()}` });
+		for (const extension of ['ogg', 'mp3'] as const) {
+			try {
+				audio = createAudio(extension);
+				await audio.play();
 
-			audio.load();
-			await audio.play();
+				break;
+			} catch (error) {
+				audio = null;
+
+				console.error(extension, error);
+			}
 		}
 
 		loading = false;
@@ -80,6 +78,19 @@
 		audio.src = '';
 		audio.removeAttribute('src');
 		audio = null;
+	}
+
+	function createAudio(extension: 'ogg' | 'mp3'): HTMLAudioElement {
+		const audio = new Audio();
+
+		audio.preload = 'none';
+		audio.volume = volumeLevel / 100;
+		audio.src =
+			new URL(`stream.${extension}`, stream) +
+			'?' +
+			new URLSearchParams({ cache: `${Date.now()}` });
+
+		return audio;
 	}
 </script>
 

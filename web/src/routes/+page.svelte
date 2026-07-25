@@ -31,7 +31,7 @@
 					if (connection.type !== 'ready') throw new Error();
 
 					connection.data.liquidsoap = message.liquidsoap;
-					connection.data.history.push([message.liquidsoap, Date.now()]);
+					connection.data.history.push([message.liquidsoap, Date.now() / 1000]);
 					break;
 				case 'icecast':
 					if (connection.type !== 'ready') throw new Error();
