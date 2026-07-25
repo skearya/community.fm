@@ -121,7 +121,7 @@ class Pls:
     async def best(
         self, query: SearchQuery, type: MediaType, services: list[str] | None = None
     ) -> Summary | None:
-        MINIMUM_ACCEPTABLE_THRESHOLD = 90.0
+        MINIMUM_ACCEPTABLE_THRESHOLD = 95.0
 
         results = await self.search(query, type, services or self.services())
 
