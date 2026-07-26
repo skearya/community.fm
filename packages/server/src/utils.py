@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 from typing import Iterable
 
 from loguru import logger
+from models import LiquidsoapMetadata
 
 
 class ConfigError(Exception):
@@ -40,6 +41,16 @@ class Subscribable[T]:
             self.subscribers.remove(queue)
 
 
+def quoted(items: Iterable[str]) -> Iterable[str]:
+    return (f"'{item}'" for item in items)
+
+
+def header(metadata: LiquidsoapMetadata) -> str:
+    return (
+        f"{metadata.artist or 'Unknown Artist'} - {metadata.title or 'Unknown Title'}"
+    )
+
+
 # https://github.com/Delgan/loguru#entirely-compatible-with-standard-logging
 class InterceptHandler(logging.Handler):
     def emit(self, record: logging.LogRecord) -> None:
@@ -63,7 +74,3 @@ class InterceptHandler(logging.Handler):
         logger.opt(depth=depth, exception=record.exc_info).log(
             level, record.getMessage()
         )
-
-
-def quoted(items: Iterable[str]) -> Iterable[str]:
-    return (f"'{item}'" for item in items)

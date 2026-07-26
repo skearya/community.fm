@@ -1,14 +1,18 @@
 import asyncio
 import json
-import time
+import uuid
 from collections.abc import Iterable
-from dataclasses import asdict
-from typing import Any, Literal, TypedDict
 
 from aiohttp import ClientConnectionResetError, web
 from aiohttp_sse import sse_response
 from loguru import logger
-from models import LiquidsoapMetadata
+from models import (
+    LiquidsoapEntry,
+    LiquidsoapMetadata,
+    InfoMessage,
+    IcecastMessage,
+    LiquidsoapMessage,
+)
 from state import State
 
 STATE_KEY = web.AppKey("STATE_KEY", State)
@@ -30,32 +34,18 @@ async def handle_next(request: web.Request) -> web.Response:
 async def handle_update_metadata(request: web.Request) -> web.Response:
     state = request.app[STATE_KEY]
 
-    metadata = LiquidsoapMetadata(**await request.json())
+    body = await request.json()
+    assert isinstance(body, dict)
 
-    state.liquidsoap.update(metadata)
-    state.history.append((metadata, time.time()))
+    cover = body.pop("cover", None)
+    metadata = LiquidsoapMetadata(**body)
+    entry = LiquidsoapEntry(metadata, cover)
+
+    state.history.append(state.liquidsoap.value)
+    state.liquidsoap.update(entry)
 
     logger.info(f"Received metadata update: {metadata.title}")
     return web.Response(status=200)
-
-
-class InfoMessage(TypedDict):
-    type: Literal["info"]
-    stream: str
-    modes: list[str]
-    history: list[tuple[dict[str, Any], int | float]]
-    liquidsoap: dict[str, Any]
-    icecast: object
-
-
-class LiquidsoapMessage(TypedDict):
-    type: Literal["liquidsoap"]
-    liquidsoap: dict[str, Any]
-
-
-class IcecastMessage(TypedDict):
-    type: Literal["icecast"]
-    icecast: object
 
 
 @public.get("/api/subscribe")
@@ -72,26 +62,36 @@ async def handle_get_subscribe(request: web.Request) -> web.StreamResponse:
                 "type": "info",
                 "stream": state.config.STREAM_BASE_URL,
                 "modes": [mode.name for mode in state.manager.modes],
-                "history": [(asdict(track), time) for track, time in state.history],
-                "liquidsoap": asdict(state.liquidsoap.value),
                 "icecast": state.icecast.value,
+                "liquidsoap": state.liquidsoap.value.serializable(),
+                "history": [entry.serializable() for entry in state.history],
             }
 
             await resp.send(json.dumps(info))
 
             send_lock = asyncio.Lock()
 
-            async def forward(queue: asyncio.Queue, type: str, dataclass: bool):
+            async def forward_liquidsoap(queue: asyncio.Queue[LiquidsoapEntry]):
                 while True:
                     data = await queue.get()
-                    message = {"type": type, type: asdict(data) if dataclass else data}
+                    message: LiquidsoapMessage = {
+                        "type": "liquidsoap",
+                        "data": data.serializable(),
+                    }
+
+                    async with send_lock:
+                        await resp.send(json.dumps(message))
+
+            async def forward_icecast(queue: asyncio.Queue[object]):
+                while True:
+                    data = await queue.get()
+                    message: IcecastMessage = {"type": "icecast", "data": data}
 
                     async with send_lock:
                         await resp.send(json.dumps(message))
 
             await asyncio.gather(
-                forward(liquidsoap_queue, "liquidsoap", True),
-                forward(icecast_queue, "icecast", False),
+                forward_liquidsoap(liquidsoap_queue), forward_icecast(icecast_queue)
             )
     except ClientConnectionResetError:
         pass
@@ -99,6 +99,28 @@ async def handle_get_subscribe(request: web.Request) -> web.StreamResponse:
         logger.exception("Subscribe SSE failed?")
 
     return resp
+
+
+@public.get("/api/cover/{id}")
+async def handle_cover(request: web.Request) -> web.Response:
+    state = request.app[STATE_KEY]
+
+    if not (id_str := request.match_info.get("id")):
+        return web.Response(status=400)
+
+    id = uuid.UUID(id_str)
+
+    if id == state.liquidsoap.value.id:
+        entry = state.liquidsoap.value
+    else:
+        entry = next((entry for entry in state.history if entry.id == id), None)
+
+    if not entry or not entry.cover:
+        return web.Response(status=404)
+
+    mime, bytes = entry.cover
+
+    return web.Response(body=bytes, content_type=mime)
 
 
 @public.get("/")

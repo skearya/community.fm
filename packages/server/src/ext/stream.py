@@ -1,6 +1,4 @@
 import asyncio
-import base64
-import re
 from dataclasses import fields
 from io import BytesIO
 from itertools import islice
@@ -10,6 +8,7 @@ from bot import CustomBot
 from discord import Interaction, Member, app_commands
 from discord.ext import commands
 from loguru import logger
+from utils import header
 
 
 class Stream(commands.Cog):
@@ -90,30 +89,25 @@ class Stream(commands.Cog):
     )
     @app_commands.guild_only()
     async def now_playing(self, interaction: Interaction):
-        metadata = self.bot.state.liquidsoap.value
+        entry = self.bot.state.liquidsoap.value
 
-        embed = discord.Embed(
-            title=f"{metadata.artist or 'Unknown Artist'} - {metadata.title or 'Unknown Title'}"
-        )
+        embed = discord.Embed(title=header(entry.metadata))
 
-        for key in fields(metadata):
-            value = getattr(metadata, key.name)
+        for key in fields(entry.metadata):
+            value = getattr(entry.metadata, key.name)
 
             if value is None or len(value) > 1024 or key.name == "cover":
                 continue
 
             embed.add_field(name=key.name, value=value)
 
-        if cover := metadata.cover:
-            match cover.split(","):
-                case [header, data] if match := re.search(
-                    "data:image/(.*);base64", header
-                ):
-                    extension = match.group(1)
-                    decoded = base64.b64decode(data)
+        if entry.cover:
+            mime, bytes = entry.cover
 
+            match mime.split("/", 1):
+                case ["image", extension]:
                     filename = f"cover.{extension}"
-                    file = discord.File(BytesIO(decoded), filename)
+                    file = discord.File(BytesIO(bytes), filename)
                     embed.set_thumbnail(url=f"attachment://{filename}")
 
                     await interaction.response.send_message(file=file, embed=embed)
@@ -128,20 +122,20 @@ class Stream(commands.Cog):
     async def recently_played(self, interaction: Interaction):
         lines: list[str] = []
 
-        for metadata, time in islice(self.bot.state.history, 0, 10):
+        for entry in islice(self.bot.state.history, 0, 10):
             details = " • ".join(
                 filter(
                     None,
                     [
-                        f"<t:{int(time)}:t>",
-                        metadata.album and f"*{metadata.album}*",
-                        metadata.user and f"*{metadata.user}*",
+                        f"<t:{int(entry.time)}:t>",
+                        entry.metadata.album and f"*{entry.metadata.album}*",
+                        entry.metadata.user and f"*{entry.metadata.user}*",
                     ],
                 )
             )
 
             lines.append(
-                f"**{metadata.title or 'Unknown'}** by {metadata.artist or 'Unknown'}\n"
+                f"**{entry.metadata.title or 'Unknown Artist'}** - {entry.metadata.artist or 'Unknown Title'}\n"
                 f"-# {details}",
             )
 
@@ -164,11 +158,11 @@ class Stream(commands.Cog):
     async def status_updater(self):
         async with self.bot.state.liquidsoap.subscribe() as queue:
             while True:
-                metadata = await queue.get()
+                entry = await queue.get()
 
                 activity = discord.Activity(
                     type=discord.ActivityType.listening,
-                    name=f"{metadata.artist or 'Unknown Artist'} - {metadata.title or 'Unknown Title'}",
+                    name=header(entry.metadata),
                 )
 
                 try:

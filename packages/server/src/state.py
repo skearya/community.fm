@@ -6,7 +6,7 @@ from clients.lastfm import LastFM
 from config import Config
 from db import Db
 from manager import ModeManager
-from models import LiquidsoapMetadata
+from models import LiquidsoapEntry, LiquidsoapMetadata
 from pls import Pls
 from tasks import icecast_poller, mode_reloader
 from utils import Subscribable
@@ -30,15 +30,16 @@ class State:
         self.manager = ModeManager(self)
 
         self.icecast: Subscribable[object] = Subscribable({})
-        self.liquidsoap: Subscribable[LiquidsoapMetadata] = Subscribable(
-            LiquidsoapMetadata(
-                title="Initializing", artist="community.fm", mode="Initializing"
+        self.liquidsoap: Subscribable[LiquidsoapEntry] = Subscribable(
+            LiquidsoapEntry(
+                LiquidsoapMetadata(
+                    title="Initializing", artist="community.fm", mode="Initializing"
+                ),
+                None,
             )
         )
 
-        self.history: deque[tuple[LiquidsoapMetadata, int | float]] = deque(
-            maxlen=MAX_METADATA_HISTORY
-        )
+        self.history: deque[LiquidsoapEntry] = deque(maxlen=MAX_METADATA_HISTORY)
 
         self.tasks = [
             asyncio.create_task(icecast_poller(self)),

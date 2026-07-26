@@ -1,16 +1,42 @@
-from dataclasses import dataclass
+from typing import TypedDict, Literal, Any
+import base64
+import re
+import time
+import uuid
+from dataclasses import dataclass, asdict
 
 from pls import Track
 
 
-@dataclass
-class ChannelModeEntry:
-    username: str
-    avatar_url: str
-    tracks: list[Track]
+class LiquidsoapEntry:
+    id: uuid.UUID
+    time: float
+    metadata: LiquidsoapMetadata
+    cover: tuple[str, bytes] | None
+
+    def __init__(self, metadata: LiquidsoapMetadata, cover: str | None):
+        self.id = uuid.uuid4()
+        self.time = time.time()
+        self.metadata = metadata
+        self.cover = None
+
+        if cover:
+            match cover.split(",", 1):
+                case [header, data] if search := re.search("data:(.*);", header):
+                    mime = search.group(1)
+                    decoded = base64.b64decode(data)
+
+                    self.cover = (mime, decoded)
+
+    def serializable(entry: LiquidsoapEntry) -> SerializeableLiquidsoapEntry:
+        return {
+            "id": str(entry.id),
+            "time": entry.time,
+            "metadata": asdict(entry.metadata),
+        }
 
 
-# Sourced from liquidsoap: `settings.encoder.metadata.export()` without `settings.encoder.metadata.cover()`
+# Sourced from liquidsoap: `settings.encoder.metadata.export()` without `settings.encoder.metadata.cover()` and without `cover` (covers get handled seperately from metadata)
 # `metadata.json.stringify()` implementation: https://github.com/savonet/liquidsoap/blob/main/src/libs/metadata.liq
 @dataclass
 class LiquidsoapMetadata:
@@ -27,11 +53,35 @@ class LiquidsoapMetadata:
     next: str | None = None
     metadata_url: str | None = None
     coverart: str | None = None
-    cover: str | None = None
     user: str | None = None
     avatar: str | None = None
     mode: str | None = None
     playcount: str | None = None
+
+
+class SerializeableLiquidsoapEntry(TypedDict):
+    id: str
+    time: float
+    metadata: dict[str, Any]
+
+
+class InfoMessage(TypedDict):
+    type: Literal["info"]
+    stream: str
+    modes: list[str]
+    icecast: object
+    liquidsoap: SerializeableLiquidsoapEntry
+    history: list[SerializeableLiquidsoapEntry]
+
+
+class IcecastMessage(TypedDict):
+    type: Literal["icecast"]
+    data: object
+
+
+class LiquidsoapMessage(TypedDict):
+    type: Literal["liquidsoap"]
+    data: SerializeableLiquidsoapEntry
 
 
 @dataclass
@@ -46,3 +96,10 @@ class LiquidsoapUri:
             if self.metadata
             else self.file
         )
+
+
+@dataclass
+class ChannelModeEntry:
+    username: str
+    avatar_url: str
+    tracks: list[Track]

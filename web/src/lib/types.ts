@@ -1,18 +1,27 @@
+/// Based on `packages/server/src/models.py` and `packages/server/src/server.py`
+
 export type Data = {
 	stream: string;
 	modes: string[];
-	history: [LiquidsoapMetadata, number][];
-	liquidsoap: LiquidsoapMetadata;
 	icecast: IcecastMetadata;
+	liquidsoap: LiquidsoapEntry;
+	history: LiquidsoapEntry[];
 };
 
-/// Based on `packages/server/src/server.py`
 export type Message =
 	| ({ type: 'info' } & Data)
-	| { type: 'liquidsoap'; liquidsoap: LiquidsoapMetadata }
-	| { type: 'icecast'; icecast: IcecastMetadata };
+	| { type: 'icecast'; data: IcecastMetadata }
+	| { type: 'liquidsoap'; data: LiquidsoapEntry };
 
-/// Based on `packages/server/src/models.py`
+export type IcecastMetadata = unknown;
+
+export type LiquidsoapEntry = {
+	id: string;
+	time: number;
+	metadata: LiquidsoapMetadata;
+	has_cover: boolean;
+};
+
 export type LiquidsoapMetadata = Partial<{
 	artist: string;
 	title: string;
@@ -27,11 +36,8 @@ export type LiquidsoapMetadata = Partial<{
 	next: string;
 	metadata_url: string;
 	coverart: string;
-	cover: string;
 	user: string;
 	avatar: string;
 	mode: string;
 	playcount: string;
 }>;
-
-export type IcecastMetadata = unknown;

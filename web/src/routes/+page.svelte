@@ -30,13 +30,13 @@
 				case 'liquidsoap':
 					if (connection.type !== 'ready') throw new Error();
 
-					connection.data.liquidsoap = message.liquidsoap;
-					connection.data.history.push([message.liquidsoap, Date.now() / 1000]);
+					connection.data.history.push(connection.data.liquidsoap);
+					connection.data.liquidsoap = message.data;
 					break;
 				case 'icecast':
 					if (connection.type !== 'ready') throw new Error();
 
-					connection.data.icecast = message.icecast;
+					connection.data.icecast = message.data;
 					break;
 				default:
 					message satisfies never;
