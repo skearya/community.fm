@@ -1,5 +1,6 @@
 import asyncio
 from collections import deque
+from typing import Self
 
 import aiohttp
 from clients.lastfm import LastFM
@@ -46,7 +47,7 @@ class State:
             asyncio.create_task(mode_reloader(self)),
         ]
 
-    async def __aenter__(self) -> State:
+    async def __aenter__(self) -> Self:
         await self.db.connect()
         await self.pls.login()
         await self.manager.setup()

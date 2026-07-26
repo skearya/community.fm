@@ -45,7 +45,7 @@ class LastFMMode(RadioMode):
     async def setup(self) -> None:
         if not (users := await self.state.db.get_users()):
             logger.info("No Last.fm users exist in the database.")
-            return None
+            return
 
         logger.info(
             f"Getting Last.fm {self.period} top tracks for {len(users)} user(s)."

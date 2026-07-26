@@ -7,11 +7,11 @@ from aiohttp import ClientConnectionResetError, web
 from aiohttp_sse import sse_response
 from loguru import logger
 from models import (
-    LiquidsoapEntry,
-    LiquidsoapMetadata,
-    InfoMessage,
     IcecastMessage,
+    InfoMessage,
+    LiquidsoapEntry,
     LiquidsoapMessage,
+    LiquidsoapMetadata,
 )
 from state import State
 

@@ -1,9 +1,8 @@
 import asyncio
 import inspect
 import logging
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Iterable
 from contextlib import asynccontextmanager
-from typing import Iterable
 
 from loguru import logger
 from models import LiquidsoapMetadata

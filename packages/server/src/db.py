@@ -27,7 +27,7 @@ class Db:
             (version,) = await cursor.fetchone() or (0,)
 
         migrations = sorted(
-            list((Path(__file__).parent / "migrations").resolve().glob("*.sql"))
+            (Path(__file__).parent / "migrations").resolve().glob("*.sql")
         )
 
         for migration in migrations[version:]:

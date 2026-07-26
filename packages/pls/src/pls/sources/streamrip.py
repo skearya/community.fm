@@ -1,5 +1,5 @@
 import asyncio
-from typing import Iterator
+from collections.abc import Iterator
 
 from deezer.errors import DataException
 from loguru import logger
@@ -36,6 +36,8 @@ from streamrip.metadata import SearchResults as RipSearchResults
 from streamrip.metadata import TrackMetadata as RipTrackMetadata
 from streamrip.metadata import TrackSummary as RipTrackSummary
 from streamrip.rip.parse_url import parse_url
+
+PREFERRED = "deezer"
 
 
 class StreamripPls:
@@ -108,9 +110,9 @@ class StreamripPls:
     ) -> list[SearchResult]:
         services = services or [
             next(
-                (c.source for c in self.active_clients() if c.source == "deezer"),
-                next((c.source for c in self.active_clients())),
-            ),
+                (c.source for c in self.active_clients() if c.source == PREFERRED),
+                next(c.source for c in self.active_clients()),
+            )
         ]
 
         async def searcher(i: int, client: Client) -> list[SearchResult]:
@@ -247,9 +249,7 @@ class StreamripPls:
 
     async def resolve(self, item: PendingSingle | PendingTrack) -> Download:
         track = await item.resolve()
-
-        if track is None:
-            raise Exception(f"{item.client.source} resolve failed")
+        assert track
 
         await track.rip()
 

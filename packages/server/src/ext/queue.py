@@ -174,7 +174,7 @@ class Queue(commands.Cog):
             )
 
             embed.set_footer(
-                text=", ".join(set([track.id[0] for track in media.items if track.id]))
+                text=", ".join({track.id[0] for track in media.items if track.id})
             )
 
             if isinstance(media, Album) and media.cover:

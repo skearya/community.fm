@@ -123,9 +123,7 @@ class Pls:
     ) -> Summary | None:
         MINIMUM_ACCEPTABLE_THRESHOLD = 95.0
 
-        results = await self.search(query, type, services or self.services())
-
-        if not results:
+        if not (results := await self.search(query, type, services or self.services())):
             return None
 
         summary = results[0]
