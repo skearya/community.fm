@@ -20,7 +20,7 @@ class YoutubePls:
             ],
         }
 
-    async def name(self) -> str:
+    def name(self) -> str:
         return "yt-dlp"
 
     async def login(self):
@@ -29,23 +29,20 @@ class YoutubePls:
     async def logout(self):
         pass
 
-    async def url(self, url: str) -> Media | None:
-        if any(
-            other in url
-            for other in ["qobuz", "tidal", "deezer", "soundcloud", "spotify"]
-        ):
-            return None
+    def services(self) -> list[str]:
+        return ["youtube"]
 
+    async def url(self, url: str) -> Media | None:
         return await self.extract(url)
 
     async def info(self, source: str, id: str, type: MediaType) -> Media | None:
-        if source != "youtube":
+        if source not in self.services():
             return None
 
         return await self.extract(id)
 
     async def id(self, source: str, id: str, type: MediaType) -> Download | None:
-        if source != "youtube":
+        if source not in self.services():
             return None
 
         return await self.resolve(id)

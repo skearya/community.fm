@@ -9,7 +9,6 @@ from pls.models import (
     Media,
     MediaType,
     Playlist,
-    SearchResult,
     Summary,
     Track,
 )
@@ -58,13 +57,14 @@ class StreamripPls:
             "soundcloud": SoundcloudClient(self.config),
         }
 
-    async def name(self) -> str:
+    def name(self) -> str:
         return "streamrip"
 
     async def login(self) -> StreamripPls:
         for source, client in self.clients.items():
             try:
                 await client.login()
+                logger.success(f"{source} successfully logged in")
             except Exception:
                 logger.error(f"{source} failed to login!")
 
@@ -107,7 +107,7 @@ class StreamripPls:
         query: str,
         type: MediaType,
         services: list[str] | None,
-    ) -> list[SearchResult]:
+    ) -> list[Summary]:
         services = services or [
             next(
                 (c.source for c in self.active_clients() if c.source == PREFERRED),
@@ -115,7 +115,7 @@ class StreamripPls:
             )
         ]
 
-        async def searcher(i: int, client: Client) -> list[SearchResult]:
+        async def searcher(client: Client) -> list[Summary]:
             service_type = (
                 "playlist"
                 if client.source == "soundcloud" and type == "album"
@@ -125,26 +125,25 @@ class StreamripPls:
             pages = await client.search(service_type, query)
             search = RipSearchResults.from_pages(client.source, service_type, pages)
 
-            summaries = streamrip_search_summaries(search, client.source)
-
-            return [(-i, summary) for summary in summaries]
+            return streamrip_search_summaries(search, client.source)[:100]
 
         tasks = await asyncio.gather(
             *[
-                searcher(i, client)
-                for i, client in enumerate(self.active_clients())
+                searcher(client)
+                for client in self.active_clients()
                 if client.source in services
             ],
             return_exceptions=True,
         )
 
-        results: list[SearchResult] = []
+        results: list[Summary] = []
 
-        for result in tasks:
-            if isinstance(result, BaseException):
-                logger.error(f"Streamrip search: {result}")
-            else:
-                results.extend(result)
+        for summaries in tasks:
+            if isinstance(summaries, BaseException):
+                logger.error(f"Streamrip search: {summaries}")
+                continue
+
+            results.extend(summaries)
 
         return results
 

@@ -44,6 +44,3 @@ class Download:
 
 # [artist, name] | query
 type SearchQuery = tuple[str, str] | str
-
-# [Preference (low to high), Summary]
-type SearchResult = tuple[int, Summary]

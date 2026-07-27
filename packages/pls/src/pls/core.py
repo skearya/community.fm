@@ -14,6 +14,8 @@ from pls.sources.streamrip import StreamripPls
 from pls.sources.youtube import YoutubePls
 from pls.utils import similarity
 
+MINIMUM_ACCEPTABLE_THRESHOLD = 95.0
+
 
 class Pls:
     def __init__(self, downloads_folder: str):
@@ -29,14 +31,10 @@ class Pls:
         await self.youtube.logout()
 
     def services(self) -> list[str]:
-        return self.streamrip.services()
+        return [*self.streamrip.services()]
 
     async def give(self, track: Track) -> Download | None:
-        if (
-            track.url
-            and not (track.id or track.title or track.artist)
-            and (updated := await self.url(track.url))
-        ):
+        if track.url and not track.id and (updated := await self.url(track.url)):
             assert isinstance(updated, Track)
             track = updated
 
@@ -46,12 +44,17 @@ class Pls:
         if track.isrc and (dl := await self.isrc(track.isrc)):
             return dl
 
-        if (
-            (track.title and track.artist)
-            and (summary := await self.best((track.artist, track.title), "track"))
-            and (dl := await self.id(*summary.id, "track"))
+        if (track.title and track.artist) and (
+            results := await self.search(
+                (track.artist, track.title), "track", self.services()
+            )
         ):
-            return dl
+            for score, summary in results:
+                if score < MINIMUM_ACCEPTABLE_THRESHOLD:
+                    break
+
+                if dl := await self.id(*summary.id, "track"):
+                    return dl
 
         return None
 
@@ -100,45 +103,36 @@ class Pls:
         query: SearchQuery,
         type: MediaType,
         services: list[str] | None = None,
-    ) -> list[Summary]:
+    ) -> list[tuple[float, Summary]]:
         text = f"{query[0]} - {query[1]}" if isinstance(query, tuple) else query
 
-        try:
-            results = await self.streamrip.search(text, type, services)
-        except Exception:
-            logger.exception("streamrip search")
-            return []
+        results: list[Summary] = []
+
+        for pls in [self.streamrip]:
+            try:
+                if not services or any(s in pls.services() for s in services):
+                    results.extend(await pls.search(text, type, services))
+            except Exception:
+                logger.exception(f"{pls.name()} search")
 
         ranked = [
-            ((rank(result, query), preference), result)
-            for preference, result in results
+            (similarity(query, summary.title, summary.artist), summary)
+            for summary in results
         ]
 
         ranked.sort(key=itemgetter(0), reverse=True)
 
-        return list(map(itemgetter(1), ranked))
+        return ranked
 
     async def best(
         self, query: SearchQuery, type: MediaType, services: list[str] | None = None
     ) -> Summary | None:
-        MINIMUM_ACCEPTABLE_THRESHOLD = 95.0
-
         if not (results := await self.search(query, type, services or self.services())):
             return None
 
-        summary = results[0]
-        score = rank(summary, query)
+        for score, summary in results:
+            if score < MINIMUM_ACCEPTABLE_THRESHOLD:
+                logger.warning(f"Closest similarity: {score:.2f}%")
+                return None
 
-        if score < MINIMUM_ACCEPTABLE_THRESHOLD:
-            logger.warning(f"Closest similarity: {score:.2f}%")
-            return None
-
-        return summary
-
-
-def rank(summary: Summary, info: SearchQuery) -> int | float:
-    match info:
-        case [artist, title]:
-            return similarity(title, summary.title, artist, summary.artist)
-        case query:
-            return similarity(query, f"{summary.artist} - {summary.title}")
+            return summary

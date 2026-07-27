@@ -48,13 +48,13 @@ class Queue(commands.Cog):
 
         results = await self.bot.state.pls.search(
             query=current,
-            type=interaction.namespace.type,
+            type=type,
             services=[service] if service else None,
         )
 
         choices: list[app_commands.Choice] = []
 
-        for summary in results[:25]:
+        for _score, summary in results[:25]:
             string = json.dumps(asdict(summary), sort_keys=True)
             hash = hashlib.md5(string.encode("utf-8")).hexdigest()
 
@@ -97,18 +97,18 @@ class Queue(commands.Cog):
 
         await interaction.response.defer()
 
-        pls = self.bot.state.pls
-
         if not (
             summary := self.summaries.get(query)
-            or await pls.best(query, type, [service] if service else None)
+            or await self.bot.state.pls.best(
+                query, type, [service] if service else None
+            )
         ):
             await interaction.followup.send(
                 "I failed to find a close enough match, try selecting an autocomplete option or queuing a URL."
             )
             return
 
-        if not (media := await pls.info(*summary.id, summary.type)):
+        if not (media := await self.bot.state.pls.info(*summary.id, summary.type)):
             await interaction.followup.send(
                 f"I failed to fetch needed metadata for {summary.title} by {summary.artist} ({summary.id[0]}), please try another service."
             )
