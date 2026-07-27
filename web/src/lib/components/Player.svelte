@@ -242,6 +242,7 @@
 				{#if entry.metadata.user}
 					<div class="flex items-center gap-x-2.25 text-gray">
 						<Image
+							loading="lazy"
 							url={entry.metadata.avatar}
 							key={entry.metadata.user}
 							class="size-6 rounded-full"

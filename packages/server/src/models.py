@@ -28,11 +28,11 @@ class LiquidsoapEntry:
 
                     self.cover = (mime, decoded)
 
-    def serializable(entry: LiquidsoapEntry) -> SerializeableLiquidsoapEntry:
+    def serializable(entry: LiquidsoapEntry) -> SerializableLiquidsoapEntry:
         return {
             "id": str(entry.id),
             "time": entry.time,
-            "metadata": asdict(entry.metadata),
+            "metadata": {k: v for k, v in asdict(entry.metadata).items() if v},
         }
 
 
@@ -59,7 +59,7 @@ class LiquidsoapMetadata:
     playcount: str | None = None
 
 
-class SerializeableLiquidsoapEntry(TypedDict):
+class SerializableLiquidsoapEntry(TypedDict):
     id: str
     time: float
     metadata: dict[str, Any]
@@ -70,8 +70,8 @@ class InfoMessage(TypedDict):
     stream: str
     modes: list[str]
     icecast: object
-    liquidsoap: SerializeableLiquidsoapEntry
-    history: list[SerializeableLiquidsoapEntry]
+    liquidsoap: SerializableLiquidsoapEntry
+    history: list[SerializableLiquidsoapEntry]
 
 
 class IcecastMessage(TypedDict):
@@ -81,7 +81,7 @@ class IcecastMessage(TypedDict):
 
 class LiquidsoapMessage(TypedDict):
     type: Literal["liquidsoap"]
-    data: SerializeableLiquidsoapEntry
+    data: SerializableLiquidsoapEntry
 
 
 @dataclass

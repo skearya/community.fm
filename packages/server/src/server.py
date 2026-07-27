@@ -55,43 +55,41 @@ async def handle_get_subscribe(request: web.Request) -> web.StreamResponse:
     try:
         async with (
             sse_response(request) as resp,
-            state.liquidsoap.subscribe() as liquidsoap_queue,
             state.icecast.subscribe() as icecast_queue,
+            state.liquidsoap.subscribe() as liquidsoap_queue,
         ):
-            info: InfoMessage = {
-                "type": "info",
-                "stream": state.config.STREAM_BASE_URL,
-                "modes": [mode.name for mode in state.manager.modes],
-                "icecast": state.icecast.value,
-                "liquidsoap": state.liquidsoap.value.serializable(),
-                "history": [entry.serializable() for entry in state.history],
-            }
-
-            await resp.send(json.dumps(info))
-
             send_lock = asyncio.Lock()
 
-            async def forward_liquidsoap(queue: asyncio.Queue[LiquidsoapEntry]):
-                while True:
-                    data = await queue.get()
-                    message: LiquidsoapMessage = {
-                        "type": "liquidsoap",
-                        "data": data.serializable(),
-                    }
+            async def send(message: InfoMessage | LiquidsoapMessage | IcecastMessage):
+                async with send_lock:
+                    await resp.send(json.dumps(message))
 
-                    async with send_lock:
-                        await resp.send(json.dumps(message))
+            await send(
+                {
+                    "type": "info",
+                    "stream": state.config.STREAM_BASE_URL,
+                    "modes": [mode.name for mode in state.manager.modes],
+                    "icecast": state.icecast.value,
+                    "liquidsoap": state.liquidsoap.value.serializable(),
+                    "history": [entry.serializable() for entry in state.history],
+                }
+            )
 
             async def forward_icecast(queue: asyncio.Queue[object]):
                 while True:
                     data = await queue.get()
-                    message: IcecastMessage = {"type": "icecast", "data": data}
 
-                    async with send_lock:
-                        await resp.send(json.dumps(message))
+                    await send({"type": "icecast", "data": data})
+
+            async def forward_liquidsoap(queue: asyncio.Queue[LiquidsoapEntry]):
+                while True:
+                    data = await queue.get()
+
+                    await send({"type": "liquidsoap", "data": data.serializable()})
 
             await asyncio.gather(
-                forward_liquidsoap(liquidsoap_queue), forward_icecast(icecast_queue)
+                forward_icecast(icecast_queue),
+                forward_liquidsoap(liquidsoap_queue),
             )
     except ClientConnectionResetError:
         pass

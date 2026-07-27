@@ -41,11 +41,13 @@
 	} & SvelteHTMLElements['img'] &
 		SvelteHTMLElements['div'] = $props();
 
+	let imageElement: HTMLImageElement | undefined = $state();
+
 	let status = $state<'loading' | 'loaded' | 'error'>('loading');
 
 	const containerClass = $derived<ClassValue>([
-		rest.loading === 'lazy' && 'opacity-0 transition-opacity',
-		rest.loading === 'lazy' && status !== 'loading' && 'opacity-100',
+		'transition-opacity',
+		status === 'loading' ? 'opacity-0' : 'opacity-100',
 		status !== 'loaded' && 'aspect-square',
 		className
 	]);
@@ -56,15 +58,16 @@
 		return `background: linear-gradient(135deg, ${fromColor} 0%, ${toColor} 100%);`;
 	});
 
-	$effect(() => {
-		void url;
-
-		status = 'loading';
+	$effect.pre(() => {
+		if (imageElement && imageElement.src !== url) {
+			status = 'loading';
+		}
 	});
 </script>
 
 {#if url !== undefined && status !== 'error'}
 	<img
+		bind:this={imageElement}
 		src={url}
 		alt=""
 		class={containerClass}
