@@ -1,21 +1,37 @@
 from rapidfuzz import fuzz
 from rapidfuzz.utils import default_process
 
+from pls.models import SearchQuery
 
-def similarity(
-    one: str, two: str, three: str | None = None, four: str | None = None
-) -> float:
-    if three and four:
-        title, title2, artist, artist2 = one, two, three, four
 
-        title_similarity = fuzz.token_set_ratio(
-            default_process(title), default_process(title2)
+def similarity(query: SearchQuery, title: str, artist: str) -> float:
+    ptitle = default_process(title)
+    partist = default_process(artist)
+    pquery = (
+        default_process(query)
+        if isinstance(query, str)
+        else (default_process(query[0]), default_process(query[1]))
+    )
+
+    split = title.split(" - ", 1)
+
+    if len(split) == 2:
+        pleft, pright = default_process(split[0]), default_process(split[1])
+
+        return max(
+            _similarity(pquery, pleft, pright),
+            _similarity(pquery, pright, pleft),
+            _similarity(pquery, ptitle, partist),
         )
 
-        artist_similarity = fuzz.token_set_ratio(
-            default_process(artist), default_process(artist2)
-        )
+    return _similarity(pquery, ptitle, partist)
 
-        return title_similarity * 0.4 + artist_similarity * 0.6
 
-    return fuzz.token_set_ratio(default_process(one), default_process(two))
+def _similarity(query: SearchQuery, title: str, artist: str) -> float:
+    if isinstance(query, str):
+        return fuzz.token_ratio(query, f"{artist} {title}")
+
+    artist_similarity = fuzz.ratio(query[0], artist)
+    title_similarity = fuzz.ratio(query[1], title)
+
+    return title_similarity * 0.5 + artist_similarity * 0.5
