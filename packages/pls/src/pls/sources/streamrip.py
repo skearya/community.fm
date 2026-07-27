@@ -136,12 +136,16 @@ class StreamripPls:
             return_exceptions=True,
         )
 
-        return [
-            item
-            for summaries in tasks
-            if not isinstance(summaries, BaseException)
-            for item in summaries
-        ]
+        results: list[Summary] = []
+
+        for summaries in tasks:
+            if isinstance(summaries, BaseException):
+                logger.error(f"Streamrip search: {summaries}")
+                continue
+
+            results.extend(summaries)
+
+        return results
 
     async def info(self, source: str, id: str, type: MediaType) -> Media | None:
         client = self.client(source)
