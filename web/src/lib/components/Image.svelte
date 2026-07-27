@@ -47,7 +47,7 @@
 
 	const containerClass = $derived<ClassValue>([
 		'transition-all',
-		status === 'loading' ? 'opacity-0' : 'opacity-100',
+		status === 'loading' && url ? 'opacity-0' : 'opacity-100',
 		status !== 'loaded' && 'aspect-square',
 		className
 	]);
