@@ -31,7 +31,7 @@ class Pls:
         await self.youtube.logout()
 
     def services(self) -> list[str]:
-        return [*self.streamrip.services(), *self.youtube.services()]
+        return [*self.streamrip.services()]
 
     async def give(self, track: Track) -> Download | None:
         if track.url and not track.id and (updated := await self.url(track.url)):
