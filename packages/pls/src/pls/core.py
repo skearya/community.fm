@@ -127,7 +127,7 @@ class Pls:
     async def best(
         self, query: SearchQuery, type: MediaType, services: list[str] | None = None
     ) -> Summary | None:
-        if not (results := await self.search(query, type, services)):
+        if not (results := await self.search(query, type, services or self.services())):
             return None
 
         for score, summary in results:
