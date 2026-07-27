@@ -46,7 +46,7 @@
 	let status = $state<'loading' | 'loaded' | 'error'>('loading');
 
 	const containerClass = $derived<ClassValue>([
-		'transition-opacity',
+		'transition-all',
 		status === 'loading' ? 'opacity-0' : 'opacity-100',
 		status !== 'loaded' && 'aspect-square',
 		className

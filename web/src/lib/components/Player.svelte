@@ -189,10 +189,7 @@
 					url={`/api/cover/${liquidsoap.id}`}
 					key={liquidsoap.metadata.title ?? '?'}
 					draggable={false}
-					class={[
-						'w-full min-w-0 object-cover transition-[filter]',
-						(!show || loading) && 'brightness-50'
-					]}
+					class={['w-full min-w-0 object-cover', (!show || loading) && 'brightness-50']}
 				/>
 				<div
 					class={[
