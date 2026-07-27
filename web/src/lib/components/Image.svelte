@@ -55,6 +55,15 @@
 
 		return `background: linear-gradient(135deg, ${fromColor} 0%, ${toColor} 100%);`;
 	});
+
+	let prevUrl: string | undefined;
+
+	$effect(() => {
+		if (url !== prevUrl) {
+			status = 'loading';
+			prevUrl = url;
+		}
+	});
 </script>
 
 {#if url && status !== 'error'}
