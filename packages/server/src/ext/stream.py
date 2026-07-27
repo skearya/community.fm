@@ -59,11 +59,15 @@ class Stream(commands.Cog):
     ) -> list[app_commands.Choice[str]]:
         manager = self.bot.state.manager
 
-        return [
-            app_commands.Choice(name=f"{mode.name} ({mode.mode})", value=mode.name)
-            for mode in manager.modes
-            if current in mode.name
-        ]
+        choices: list[app_commands.Choice] = []
+
+        for mode in manager.modes:
+            name = f"{mode.name} ({mode.mode})"
+
+            if current in name:
+                choices.append(app_commands.Choice(name=name, value=mode.name))
+
+        return choices
 
     @app_commands.command(description="Get or set the current radio mode.")
     @app_commands.autocomplete(name=mode_autocomplete)
