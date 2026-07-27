@@ -103,3 +103,10 @@ class ChannelModeEntry:
     username: str
     avatar_url: str
     tracks: list[Track]
+
+
+@dataclass
+class RequestQueueModeEntry:
+    username: str
+    avatar_url: str
+    track: Track

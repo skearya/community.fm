@@ -2,9 +2,8 @@ from collections import deque
 from typing import TYPE_CHECKING, Any, TypedDict
 
 from loguru import logger
-from models import LiquidsoapUri
+from models import LiquidsoapUri, RequestQueueModeEntry
 from modes.mode import RadioMode
-from pls import Track
 
 if TYPE_CHECKING:
     from state import State
@@ -22,7 +21,7 @@ class RequestQueueMode(RadioMode):
         super().__init__(state, "Request Queue", name)
 
         self.autoswitch = options["autoswitch"]
-        self.items: deque[tuple[str, Track]] = deque()
+        self.items: deque[RequestQueueModeEntry] = deque()
 
     async def setup(self) -> None:
         pass
@@ -34,11 +33,13 @@ class RequestQueueMode(RadioMode):
         if not self.items:
             return None
 
-        username, track = self.items.popleft()
+        entry = self.items.popleft()
 
-        logger.debug(f"Fetching queued track from {username}: {track}")
+        logger.debug(f"Fetching queued track from {entry.username}: {entry.track}")
 
-        if dl := await self.state.pls.give(track):
-            return LiquidsoapUri(dl.path, {"user": username}, True)
+        if dl := await self.state.pls.give(entry.track):
+            return LiquidsoapUri(
+                dl.path, {"user": entry.username, "avatar": entry.avatar_url}, True
+            )
 
-        logger.warning(f"Failed to download queued track: {track}")
+        logger.warning(f"Failed to download queued track: {entry.track}")

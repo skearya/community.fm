@@ -5,8 +5,9 @@ from dataclasses import asdict
 import discord
 from bot import CustomBot
 from cachetools import LRUCache
-from discord import Interaction, app_commands
+from discord import Interaction, Member, User, app_commands
 from discord.ext import commands
+from models import RequestQueueModeEntry
 from modes.queue import RequestQueueMode
 from pls import Album, Media, MediaType, Playlist, Summary, Track
 
@@ -34,7 +35,7 @@ class Queue(commands.Cog):
             )
             return
 
-        embed = await self.process(queue, interaction.user.name, media)
+        embed = await self.process(queue, interaction.user, media)
         await interaction.followup.send(embed=embed)
 
     async def query_autocomplete(
@@ -114,7 +115,7 @@ class Queue(commands.Cog):
             )
             return
 
-        embed = await self.process(queue, interaction.user.name, media)
+        embed = await self.process(queue, interaction.user, media)
         await interaction.followup.send(embed=embed)
 
     @app_commands.command(description="See the current tracks in queue.")
@@ -125,16 +126,19 @@ class Queue(commands.Cog):
 
         lines: list[str] = []
 
-        for username, track in queue.items:
+        for entry in queue.items:
             details = " • ".join(
                 filter(
                     None,
-                    [track.id and f"*{track.id[0]}*", f"*{username}*"],
+                    [
+                        entry.track.id and f"*{entry.track.id[0]}*",
+                        f"*{entry.username}*",
+                    ],
                 )
             )
 
             lines.append(
-                f"**{track.title or 'Unknown'}** by {track.artist or 'Unknown'}\n"
+                f"**{entry.track.title or 'Unknown'}** by {entry.track.artist or 'Unknown'}\n"
                 f"-# {details}",
             )
 
@@ -143,7 +147,7 @@ class Queue(commands.Cog):
         await interaction.response.send_message(embed=embed)
 
     async def process(
-        self, queue: RequestQueueMode, username: str, media: Media
+        self, queue: RequestQueueMode, user: User | Member, media: Media
     ) -> discord.Embed:
         embed = discord.Embed()
 
@@ -157,7 +161,9 @@ class Queue(commands.Cog):
             if media.url:
                 embed.url = media.url
 
-            queue.items.append((username, media))
+            queue.items.append(
+                RequestQueueModeEntry(user.display_name, user.display_avatar.url, media)
+            )
         elif isinstance(media, Album | Playlist):
             embed.title = "Album queued"
             embed.description = (
@@ -180,7 +186,14 @@ class Queue(commands.Cog):
             if isinstance(media, Album) and media.cover:
                 embed.set_thumbnail(url=media.cover)
 
-            queue.items.extend([(username, track) for track in media.items])
+            queue.items.extend(
+                [
+                    RequestQueueModeEntry(
+                        user.display_name, user.display_avatar.url, track
+                    )
+                    for track in media.items
+                ]
+            )
 
         manager = self.bot.state.manager
 
