@@ -12,11 +12,15 @@ class Reload(commands.Cog):
     ) -> list[app_commands.Choice[str]]:
         manager = self.bot.state.manager
 
-        return [
-            app_commands.Choice(name=mode.name, value=mode.name)
-            for mode in manager.modes
-            if current in mode.name
-        ]
+        choices: list[app_commands.Choice] = []
+
+        for mode in manager.modes:
+            name = f"{mode.name} ({mode.mode})"
+
+            if current in name:
+                choices.append(app_commands.Choice(name=name, value=mode.name))
+
+        return choices
 
     @app_commands.command(
         description="Manually refresh data for one or all radio modes"

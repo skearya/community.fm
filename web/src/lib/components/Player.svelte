@@ -207,7 +207,7 @@
 			<div
 				bind:this={historyElement}
 				style="scrollbar-width: none;"
-				class="snap-y space-y-4.25 overflow-y-auto rounded-t-2xl pb-6"
+				class="snap-y space-y-4.25 overflow-y-auto rounded-t-2xl pb-12"
 			>
 				{#each history.toReversed() as entry (entry.id)}
 					{@render previous(entry)}
