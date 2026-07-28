@@ -7,7 +7,7 @@ import sys
 
 import rich
 from loguru import logger
-from pls import Pls, Track
+from pls import Pls
 
 logger.remove()
 
@@ -29,17 +29,16 @@ async def main():
 
     await pls.login()
 
-    with open("data/stress.csv") as file:
+    with open("data/playlist.csv") as file:
         for row in csv.DictReader(file):
-            request = Track(
-                id=None,
-                url=None,
-                isrc=row["ISRC"],
-                title=row["Track Name"],
-                artist=row["Artist Name(s)"],
-            )
+            query = (row["Artist Name(s)"], row["Track Name"])
 
-            rich.print(await pls.give(request))
+            if results := await pls.search(query, "track", pls.services()):
+                score, summary = results[0]
+
+                rich.print(f"{score}: {query} | {summary}")
+            else:
+                rich.print(f"Failed! {query}")
 
     await pls.logout()
 
