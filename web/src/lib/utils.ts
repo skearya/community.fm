@@ -1,12 +1,19 @@
-import type { IcecastMetadata } from '$lib/types';
+import type { Attachment } from 'svelte/attachments';
 
-export function getListeners(status: IcecastMetadata) {
-	try {
-		// @ts-expect-error Icecast doesn't properly document.
-		return status.icestats.source.reduce((acc, s) => acc + s.listeners, 0);
-	} catch {
-		return 0;
-	}
+export function onClickOutside(handler: (event: PointerEvent) => void): Attachment {
+	return (element) => {
+		function handleClick(event: PointerEvent) {
+			if (!element.contains(event.target as Node | null) && !event.defaultPrevented) {
+				handler(event);
+			}
+		}
+
+		document.addEventListener('click', handleClick, true);
+
+		return () => {
+			document.removeEventListener('click', handleClick, true);
+		};
+	};
 }
 
 export function memoize<Args extends unknown[], Return>(

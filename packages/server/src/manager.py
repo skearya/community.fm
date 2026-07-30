@@ -116,11 +116,10 @@ class ModeManager:
                     and self.request.task.exception() is None
                     and (dl := self.request.task.result())
                 ):
-                    logger.info(f"Serving {dl.file} from '{self.request.mode.name}'")
-
-                    dl.metadata["mode"] = self.request.mode.name
+                    mode = self.request.mode.name
                     self.request = None
 
+                    dl.metadata.mode = mode
                     self.history.append(dl)
 
                     if len(self.history) > DOWNLOADS_BEFORE_DELETION:
@@ -128,6 +127,8 @@ class ModeManager:
 
                         if old.deletable:
                             Path(old.file).unlink(missing_ok=True)
+
+                    logger.info(f"Serving {dl.file} from '{mode}'")
 
                     return str(dl)
 

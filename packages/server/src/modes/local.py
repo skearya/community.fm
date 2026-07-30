@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, TypedDict
 
 from loguru import logger
-from models import LiquidsoapUri
+from models import LiquidsoapMetadata, LiquidsoapUri
 from modes.mode import RadioMode
 
 if TYPE_CHECKING:
@@ -44,4 +44,6 @@ class LocalSongsMode(RadioMode):
             self.order = self.songs.copy()
             random.shuffle(self.order)
 
-        return LiquidsoapUri(str(self.order.pop()), {}, False)
+        return LiquidsoapUri(
+            str(self.order.pop()), LiquidsoapMetadata(), deletable=False
+        )

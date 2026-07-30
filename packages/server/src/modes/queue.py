@@ -2,7 +2,7 @@ from collections import deque
 from typing import TYPE_CHECKING, Any, TypedDict
 
 from loguru import logger
-from models import LiquidsoapUri, RequestQueueModeEntry
+from models import LiquidsoapMetadata, LiquidsoapUri, RequestQueueModeEntry
 from modes.mode import RadioMode
 
 if TYPE_CHECKING:
@@ -39,7 +39,8 @@ class RequestQueueMode(RadioMode):
 
         if dl := await self.state.pls.give(entry.track):
             return LiquidsoapUri(
-                dl.path, {"user": entry.username, "avatar": entry.avatar_url}, True
+                dl.path,
+                LiquidsoapMetadata(user=entry.username, avatar=entry.avatar_url),
             )
 
         logger.warning(f"Failed to download queued track: {entry.track}")

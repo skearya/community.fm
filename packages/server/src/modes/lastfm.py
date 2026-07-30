@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, Literal, TypedDict
 
 from db import User
 from loguru import logger
-from models import LiquidsoapUri
+from models import LiquidsoapMetadata, LiquidsoapUri
 from modes.mode import RadioMode
 from pls import Track
 from utils import ConfigError
@@ -76,16 +76,13 @@ class LastFMMode(RadioMode):
         logger.debug(f"Fetching Last.fm item: {item.track}")
 
         if dl := await self.state.pls.give(item.track):
-            avatar = self.avatars[user]
-
             return LiquidsoapUri(
                 dl.path,
-                {
-                    "user": user.lastfm_username,
-                    "playcount": str(item.playcount),
-                    **({"avatar": avatar} if avatar else {}),
-                },
-                True,
+                LiquidsoapMetadata(
+                    user=user.lastfm_username,
+                    playcount=str(item.playcount),
+                    avatar=self.avatars[user],
+                ),
             )
 
         logger.warning(f"Failed to download Last.fm item: {item.track}")

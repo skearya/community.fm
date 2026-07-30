@@ -116,7 +116,7 @@ class Pls:
                 logger.exception(f"{pls.name()} search")
 
         ranked = [
-            (similarity(query, summary.title, summary.artist), summary)
+            (similarity(query, summary.artist, summary.title), summary)
             for summary in results
         ]
 

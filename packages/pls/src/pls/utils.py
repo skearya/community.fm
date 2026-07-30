@@ -4,10 +4,10 @@ from rapidfuzz.utils import default_process
 from pls.models import SearchQuery
 
 
-def similarity(query: SearchQuery, title: str, artist: str, p=default_process) -> float:
+def similarity(query: SearchQuery, artist: str, title: str, p=default_process) -> float:
     pquery = p(query) if isinstance(query, str) else (p(query[0]), p(query[1]))
-    ptitle = p(title)
     partist = p(artist)
+    ptitle = p(title)
 
     return similarity_processed(pquery, partist, ptitle)
 

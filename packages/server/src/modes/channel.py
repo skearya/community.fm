@@ -2,7 +2,7 @@ import random
 from typing import TYPE_CHECKING, Any, TypedDict
 
 from loguru import logger
-from models import ChannelModeEntry, LiquidsoapUri
+from models import ChannelModeEntry, LiquidsoapMetadata, LiquidsoapUri
 from modes.mode import RadioMode
 
 if TYPE_CHECKING:
@@ -46,7 +46,8 @@ class ChannelMode(RadioMode):
 
         if dl := await self.state.pls.give(song):
             return LiquidsoapUri(
-                dl.path, {"user": entry.username, "avatar": entry.avatar_url}, True
+                dl.path,
+                LiquidsoapMetadata(user=entry.username, avatar=entry.avatar_url),
             )
 
         logger.warning(f"Failed to download channel song: {song}")

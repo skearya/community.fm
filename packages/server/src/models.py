@@ -87,15 +87,13 @@ class LiquidsoapMessage(TypedDict):
 @dataclass
 class LiquidsoapUri:
     file: str
-    metadata: dict[str, str]
-    deletable: bool
+    metadata: LiquidsoapMetadata
+    deletable: bool = True
 
     def __str__(self) -> str:
-        return (
-            f"annotate:{','.join(f'{k}="{v}"' for k, v in self.metadata.items())}:{self.file}"
-            if self.metadata
-            else self.file
-        )
+        metadata = ",".join(f'{k}="{v}"' for k, v in asdict(self.metadata).items() if v)
+
+        return f"annotate:{metadata}:{self.file}" if metadata else self.file
 
 
 @dataclass

@@ -2,7 +2,7 @@ import random
 from typing import TYPE_CHECKING, Any, TypedDict
 
 from loguru import logger
-from models import LiquidsoapUri
+from models import LiquidsoapMetadata, LiquidsoapUri
 from modes.mode import RadioMode
 from pls import Album, Playlist, Track
 
@@ -53,6 +53,6 @@ class YoutubeMode(RadioMode):
         logger.debug(f"Fetching video: {track.url}")
 
         if dl := await self.state.pls.give(track):
-            return LiquidsoapUri(dl.path, {}, True)
+            return LiquidsoapUri(dl.path, LiquidsoapMetadata())
 
         logger.warning(f"Failed to download video: {track.url}")
