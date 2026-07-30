@@ -48,7 +48,8 @@ end
 # Build the feed from the server
 feed =
   request.dynamic(
-    retry_delay=5.0,
+    prefetch=1,
+    retry_delay=0.1,
     fun () ->
       begin
         uri = http.get("#{BASE_URL}/next")
