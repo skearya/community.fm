@@ -1,5 +1,6 @@
 import asyncio
 from collections.abc import Iterator
+from pathlib import Path
 
 from deezer.errors import DataException
 from loguru import logger
@@ -41,7 +42,11 @@ PREFERRED = "deezer"
 
 class StreamripPls:
     def __init__(self, downloads_folder: str):
-        self.config = Config(DEFAULT_CONFIG_PATH)
+        self.config = (
+            Config(DEFAULT_CONFIG_PATH)
+            if Path(DEFAULT_CONFIG_PATH).exists()
+            else Config.defaults()
+        )
 
         self.config.session.downloads.folder = downloads_folder
         self.config.session.artwork.save_artwork = False

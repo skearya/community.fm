@@ -19,7 +19,3 @@ format-web:
 check-web:
     npm run check
     npm run lint
-
-publish: pre
-    docker build -t ghcr.io/skearya/radio:latest -f Dockerfile .
-    docker push ghcr.io/skearya/radio:latest

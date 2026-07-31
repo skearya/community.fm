@@ -67,7 +67,7 @@ async def handle_get_subscribe(request: web.Request) -> web.StreamResponse:
             await send(
                 {
                     "type": "info",
-                    "stream": state.config.STREAM_BASE_URL,
+                    "stream": state.config.ICECAST_PUBLIC_BASE_URL,
                     "modes": [mode.name for mode in state.manager.modes],
                     "icecast": state.icecast.value,
                     "liquidsoap": state.liquidsoap.value.serializable(),

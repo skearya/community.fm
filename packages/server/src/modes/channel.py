@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, TypedDict
 from loguru import logger
 from models import ChannelModeEntry, LiquidsoapMetadata, LiquidsoapUri
 from modes.mode import RadioMode
+from utils import ConfigError
 
 if TYPE_CHECKING:
     from state import State
@@ -19,6 +20,11 @@ class ChannelMode(RadioMode):
 
     def __init__(self, state: State, name: str, options: ChannelOptions):
         super().__init__(state, "Channel Songs", name)
+
+        if not state.config.DISCORD_BOT_TOKEN:
+            raise ConfigError(
+                "Cannot use Discord Channel radio mode without the `DISCORD_BOT_TOKEN` environment variable."
+            )
 
         self.channel_name = options["channel_name"]
         self.entries: dict[int, ChannelModeEntry] = {}

@@ -134,7 +134,13 @@ class ModeManager:
 
                 if self.request.retries + 1 >= RETRIES_BEFORE_MODE_SWITCH:
                     mode = random.choice(
-                        [m for m in self.modes if m is not self.request.mode]
+                        [
+                            m
+                            for m in self.modes
+                            if m is not self.mode
+                            and not isinstance(m, RequestQueueMode)
+                        ]
+                        or self.modes
                     )
 
                     logger.warning(

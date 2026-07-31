@@ -16,7 +16,8 @@ logs
 .env
 
 # Server config
-config.toml
+docker-compose.override.yml
+modes.toml
 
 # Other
 .DS_Store

@@ -47,18 +47,11 @@ FROM python:3.14-alpine AS runner
 # Install ffmpeg & deno (needed for yt-dlp), opus (needed for bot streaming)
 RUN apk add --no-cache deno ffmpeg opus-dev
 
-# Setup a non-root user
-RUN addgroup -g 1000 -S nonroot \
-    && adduser -u 1000 -G nonroot -S -D nonroot
-
 # Copy the application from the builder
-COPY --from=builder --chown=nonroot:nonroot /app /app
+COPY --from=builder /app /app
 
 # Place executables in the environment at the front of the path
 ENV PATH="/app/.venv/bin:$PATH"
-
-# Use the non-root user to run our application
-USER nonroot
 
 # Use `/app` as the working directory
 WORKDIR /app

@@ -1,8 +1,6 @@
 services:
     community-fm-server:
-        build:
-            dockerfile: Dockerfile
-            target: ${MODE:-production}
+        image: ghcr.io/skearya/community.fm-server:latest
         container_name: community-fm-server
         restart: unless-stopped
         stop_grace_period: 1s
@@ -11,7 +9,7 @@ services:
         env_file:
             - .env
         volumes:
-            - ${MODE_CONFIG_PATH}:/config/modes.toml:ro
+            - ./modes.toml:/config/modes.toml:ro
             - community-fm-data:/data:rw
             - community-fm-downloads:/downloads:rw
             - ${LOCAL_MUSIC_DIRECTORY}:/music:ro
@@ -19,7 +17,7 @@ services:
             # Uncomment to use a streamrip config from `rip config path` for better downloads:
             # - ${STREAMRIP_CONFIG_PATH}:/root/.config/streamrip/config.toml:ro
     community-fm-liquidsoap:
-        build: liquidsoap
+        image: ghcr.io/skearya/community.fm-liquidsoap:latest
         container_name: community-fm-liquidsoap
         restart: unless-stopped
         ports:

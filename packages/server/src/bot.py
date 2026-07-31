@@ -44,10 +44,13 @@ class CustomBot(commands.Bot):
 
 
 async def start(state: State):
+    if not (DISCORD_BOT_TOKEN := state.config.DISCORD_BOT_TOKEN):
+        return
+
     discord.utils.setup_logging(handler=InterceptHandler(), root=False)
 
     if Path("/usr/lib/libopus.so").exists():
         discord.opus.load_opus("/usr/lib/libopus.so")
 
     async with CustomBot(state) as bot:
-        await bot.start(state.config.DISCORD_BOT_TOKEN)
+        await bot.start(DISCORD_BOT_TOKEN)
