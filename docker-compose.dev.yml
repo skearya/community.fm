@@ -11,7 +11,7 @@ services:
         env_file:
             - .env
         volumes:
-            - ${MODE_CONFIG_PATH}:/config/modes.toml:ro
+            - ./modes.toml:/config/modes.toml:ro
             - community-fm-data:/data:rw
             - community-fm-downloads:/downloads:rw
             - ${LOCAL_MUSIC_DIRECTORY}:/music:ro

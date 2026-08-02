@@ -72,7 +72,7 @@ WORKDIR /web
 RUN --mount=type=cache,target=/root/.npm,sharing=locked \
     --mount=type=bind,source=web/package-lock.json,target=package-lock.json \
     --mount=type=bind,source=web/package.json,target=package.json \
-    --mount=type=bind,source=web/svelte.config.js,target=svelte.config.js \
+    --mount=type=bind,source=web/svelte.config.ts,target=svelte.config.ts \
     npm ci --no-audit --no-fund
 
 # Copy source files

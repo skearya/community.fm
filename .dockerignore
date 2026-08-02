@@ -14,9 +14,9 @@
 !web/.npmrc
 !web/.prettierignore
 !web/.prettierrc
-!web/eslint.config.js
+!web/eslint.config.ts
 !web/package-lock.json
 !web/package.json
-!web/svelte.config.js
+!web/svelte.config.ts
 !web/tsconfig.json
 !web/vite.config.ts
