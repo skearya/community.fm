@@ -1,14 +1,14 @@
-[modes.youtube."DJ Mixes"]
-playlist-id = "..."
-
-[modes.last-fm."Weekly Top Tracks"]
-period = "7day"
-
-[modes.channel."Liked Songs"]
-channel-name = "liked-songs"
-
 [modes.local."Local Songs"]
 directory = "/music"
 
-[modes.queue."Request Queue"]
-autoswitch = true
+# [modes.queue."Request Queue"]
+# autoswitch = true
+
+# [modes.youtube."DJ Mixes"]
+# playlist-id = "..."
+
+# [modes.last-fm."Weekly Top Tracks"]
+# period = "7day"
+
+# [modes.channel."Liked Songs"]
+# channel-name = "liked-songs"
