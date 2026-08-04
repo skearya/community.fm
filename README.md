@@ -30,7 +30,7 @@ A configurable self-hosted radio station with powerful modes.
 
 | Mode Name                    | Description                                                                |
 | ---------------------------- | -------------------------------------------------------------------------- |
-| Local Folder                 | shuffles through a local library of music                                  |
+| Local Songs                  | shuffles through a local library of music                                  |
 | Request Queue                | plays manually queued songs/albums/playlists from a URL or search          |
 | YouTube Playlist             | plays songs from a YouTube playlist or a single video                      |
 | Last.fm Top Tracks           | plays from users top scrobbled songs by Last.fm during a given time period |
@@ -61,15 +61,24 @@ curl -o .env https://raw.githubusercontent.com/skearya/community.fm/refs/heads/m
 curl -o modes.toml https://raw.githubusercontent.com/skearya/community.fm/refs/heads/main/modes.toml.example
 ```
 
-### Step 2 - Set the `.env` and `modes.toml` files with custom values
+### Step 2 - Edit the `.env` and `modes.toml` files with custom values
 
-> .env
+Radio modes are configured with `modes.toml` and the full list of modes [can be found here](). You can enable the modes you desire and have multiple instances of a single radio mode.
+
+community.fm needs at least one radio mode active in order to start. The "Local Songs" radio mode has already been enabled in the `modes.toml`, to use it set `LOCAL_MUSIC_DIRECTORY` in `.env` to a folder on your machine with audio files.
+
+> If you don't want to enable the "Local Songs" mode, you can remove the two `${LOCAL_MUSIC_DIRECTORY}:/music:ro` bind mounts in the `docker-compose.yml` and enable another mode instead.
+
+> [!CAUTION]
+> The `ICECAST_SOURCE_PASSWORD`, `ICECAST_RELAY_PASSWORD`, `ICECAST_ADMIN_PASSWORD`, `LIVE_SOURCE_PASSWORD` variables **must be replaced** from the default of "hackme" on a public instance. You can generate passwords by running `openssl rand -hex 16`.
+
+#### `.env`
 
 ```bash
-# URL of Icecast instance (ex: https://listen.example.com/)
+# URL of Icecast instance (ex: http://localhost:8000/ or https://listen.example.com/)
 ICECAST_BASE_URL=http://localhost:8000/
 
-# Icecast passwords
+# Passwords (MUST BE CHANGED from "hackme" on a public instance)
 ICECAST_SOURCE_PASSWORD=hackme
 ICECAST_RELAY_PASSWORD=hackme
 ICECAST_ADMIN_PASSWORD=hackme
@@ -89,7 +98,7 @@ LOCAL_MUSIC_DIRECTORY=?
 # STREAMRIP_CONFIG_PATH=?
 ```
 
-> modes.toml
+#### `modes.toml`
 
 ```toml
 [modes.local."Local Songs"]
@@ -121,12 +130,13 @@ docker compose up -d
 - Discord Bot (strongly recommended)
 - Streamrip Config (recommended for better downloads)
 - Radio Mode Setup
-    - Local Folder
+    - Local Songs
     - Request Queue
     - YouTube Playlist
     - Last.fm Top Tracks
     - Discord Channel of Playlists
     - Incoming Livestream
+- Reverse Proxying
 
 ### Request Queue
 
