@@ -12,9 +12,7 @@ A configurable self-hosted radio station with powerful modes.
 > [!NOTE]
 > community.fm does not condone piracy or unauthorized distribution of copyrighted material, and contains no code for bypassing copyright protections or obtaining unauthorized content.
 
-|         Desktop         |         Mobile         |
-| :---------------------: | :--------------------: |
-| ![](assets/desktop.png) | ![](assets/mobile.png) |
+![](assets/desktop.png)
 
 ...and you can also listen on [VLC](https://www.videolan.org/), [MPV](https://mpv.io/), [IINA](https://iina.io/), [Broadcasts](https://apps.apple.com/us/app/broadcasts/id1469995354), [foobar2000](https://www.foobar2000.org/), [ffplay](https://ffmpeg.org/ffplay.html), [Icecast compatible players](https://icecast.org/apps/#players), and a Discord bot in VCs.
 
@@ -154,11 +152,11 @@ docker compose up -d
 
 Shuffles through a local library of music.
 
-The local library needs to be mounted to the `community-fm-server` and `community-fm-liquidsoap` docker containers. In the quickstart `docker-compose.yml`, there is a bind mount made for you that mounts `${LOCAL_MUSIC_DIRECTORY}` to `/music` on **both** containers. You can make more mounts yourself and reference them in `modes.toml`.
+The local library needs to be mounted to a path of your choice in **both** the `community-fm-server` and `community-fm-liquidsoap` docker containers. In the quickstart `docker-compose.yml`, there is a bind mount made for you that mounts `${LOCAL_MUSIC_DIRECTORY}` to `/music` on both containers. You can make more bind mounts yourself and use them in `modes.toml`.
 
 To enable this mode, add `[modes.local."Your Name"]` to `config.toml` with these options:
 
-- `directory` = absolute path **in the docker container accesible by `community-fm-server` and `community-fm-liquidsoap`**.F
+- `directory` = absolute path **in the docker container accesible by `community-fm-server` and `community-fm-liquidsoap`**.
 
 #### Example `config.toml`
 
