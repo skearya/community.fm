@@ -7,6 +7,10 @@ A configurable self-hosted radio station with powerful modes.
 ![GitHub Tag](https://img.shields.io/github/v/tag/skearya/community.fm)
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/skearya/community.fm/build.yml)
 
+[Installation](https://img.shields.io/github/actions/workflow/status/skearya/community.fm/build.yml) •
+[Setup](https://img.shields.io/github/actions/workflow/status/skearya/community.fm/build.yml) •
+[FAQ](https://img.shields.io/github/actions/workflow/status/skearya/community.fm/build.yml)
+
 </div>
 
 > [!NOTE]
@@ -26,7 +30,7 @@ A configurable self-hosted radio station with powerful modes.
 
 ### Radio Modes
 
-| Mode Name                    | Description                                                                |
+| Mode                         | Description                                                                |
 | ---------------------------- | -------------------------------------------------------------------------- |
 | Local Songs                  | shuffles through a local library of music                                  |
 | Request Queue                | plays manually queued songs/albums/playlists from a URL or search          |
@@ -35,7 +39,7 @@ A configurable self-hosted radio station with powerful modes.
 | Discord Channel of Playlists | plays songs from a text channel of Spotify/YouTube/Apple Music playlists   |
 | Incoming Livestream          | proxies an incoming livestream to the radio                                |
 
-## Quickstart
+## Installation
 
 ### Step 1 - Download the required files
 
@@ -79,7 +83,12 @@ community.fm needs at least one radio mode active in order to start. The "Local 
 
 > If you don't want to enable the "Local Songs" mode, you can remove the two `${LOCAL_MUSIC_DIRECTORY}:/music:ro` bind mounts in the `docker-compose.yml` and enable another mode instead.
 
-#### `.env`
+> [!CAUTION]
+> The `ICECAST_SOURCE_PASSWORD`, `ICECAST_RELAY_PASSWORD`, `ICECAST_ADMIN_PASSWORD`, `LIVE_SOURCE_PASSWORD` variables **must be replaced** from the default of "hackme" on a public instance. You can generate passwords by running `openssl rand -hex 16`.
+
+<details>
+
+<summary><code>.env</code></summary>
 
 ```bash
 # URL of Icecast instance (ex: http://localhost:8000/ or https://listen.example.com/)
@@ -105,10 +114,11 @@ LOCAL_MUSIC_DIRECTORY=?
 # STREAMRIP_CONFIG_PATH=?
 ```
 
-> [!CAUTION]
-> The `ICECAST_SOURCE_PASSWORD`, `ICECAST_RELAY_PASSWORD`, `ICECAST_ADMIN_PASSWORD`, `LIVE_SOURCE_PASSWORD` variables **must be replaced** from the default of "hackme" on a public instance. You can generate passwords by running `openssl rand -hex 16`.
+</details>
 
-#### `modes.toml`
+<details>
+
+<summary><code>modes.toml</code></summary>
 
 ```toml
 [modes.local."Local Songs"]
@@ -127,6 +137,8 @@ directory = "/music"
 # channel-name = "liked-songs"
 ```
 
+</details>
+
 ### Step 3 - Start the containers
 
 From the directory you created in Step 1 (which should now contain your customized `.env` and `modes.toml` files), run the following command to start community.fm as a background service:
@@ -134,147 +146,3 @@ From the directory you created in Step 1 (which should now contain your customiz
 ```bash
 docker compose up -d
 ```
-
-## Setup
-
-- Discord Bot (strongly recommended)
-- Streamrip Config (recommended for better downloads)
-- Radio Mode Setup
-    - Local Songs
-    - Request Queue
-    - YouTube Playlist
-    - Last.fm Top Tracks
-    - Discord Channel of Playlists
-    - Incoming Livestream
-- Reverse Proxying
-
-### Local Songs
-
-Shuffles through a local library of music.
-
-The local library needs to be mounted to a path of your choice in **both** the `community-fm-server` and `community-fm-liquidsoap` docker containers. In the quickstart `docker-compose.yml`, there is a bind mount made for you that mounts `${LOCAL_MUSIC_DIRECTORY}` to `/music` on both containers. You can make more bind mounts yourself and use them in `modes.toml`.
-
-To enable this mode, add `[modes.local."Your Name"]` to `config.toml` with these options:
-
-- `directory` = absolute path **in the docker container accesible by `community-fm-server` and `community-fm-liquidsoap`**.
-
-#### Example `config.toml`
-
-```toml
-[modes.local."My Songs"]
-directory = "/music"
-
-[modes.local."My Mixes"]
-directory = "/mixes"
-```
-
-### Request Queue
-
-Plays manually queued songs/albums/playlists from a URL or search. Controlling the queue is done through the Discord Bot. Only one request queue can be defined in the config.
-
-To enable this mode, add `[modes.queue."Your Name"]` to `config.toml` with these options:
-
-- `autoswitch` = if the radio should automatically switch to the request queue mode after the current song.
-
-#### Example `config.toml`
-
-```toml
-[modes.queue."Request Queue"]
-autoswitch = true
-```
-
-#### Discord bot commands
-
-- `/queue`: See the current tracks in queue
-- `/queue-search`: Queue a track/album/playlist onto the radio through searching
-- `/queue-url`: Queue a track/album/playlist onto the radio from a URL <sup>(qobuz/tidal/deezer/soundcloud/youtube)</sup>
-
-### YouTube Playlist
-
-Plays items from a YouTube playlist or repeats a single video.
-
-To enable this mode, add `[modes.youtube."Your Name"]` to `config.toml` with these options:
-
-- `playlist-id` = ID to a YouTube playlist, usually found after `youtube.com/playlist?list=`.
-
-#### Example `config.toml`
-
-```toml
-[modes.youtube."Cool Sets"]
-playlist-id = "PLMvc7dwDCWDfeLEnRl4CREwbn1ipA8O6_"
-```
-
-### Last.fm Top Tracks
-
-Plays linked users top scrobbled songs from Last.fm during a given time period. Last.fm account linking is currently done through the Discord Bot with `/link-lastfm`.
-
-A [Last.fm API account (link to create)](https://www.last.fm/api/account/create) is required to use this radio mode. The values of `Application name` and `Application description` can be anything. `Callback URL` and `Application homepage` can be left blank. Once you submit, set the environment variable `LASTFM_API_KEY` to "API key" and `LASTFM_SECRET` to "Shared secret".
-
-#### Required `.env`
-
-```bash
-# Last.fm API account (https://www.last.fm/api/account/create)
-LASTFM_API_KEY=?
-LASTFM_SECRET=?
-```
-
-To enable this mode, add `[modes.last-fm."Your Name"]` to `config.toml` with these options:
-
-- `period` = time period to fetch top tracks from, either `"overall" | "7day" | "1month" | "3month" | "6month" | "12month"`.
-
-#### Example `config.toml`
-
-```toml
-[modes.last-fm."Weekly Top Tracks"]
-period = "7day"
-
-[modes.last-fm."Yearly Top Tracks"]
-period = "12month"
-```
-
-#### Discord bot commands
-
-- `/link-lastfm`: Link your Last.fm account to the radio.
-- `/unlink-lastfm`: Unlink your Last.fm account from the radio.
-
-### Discord Channel of Playlists
-
-Plays songs from a given Discord text channel of exported Spotify/YouTube/Apple Music playlists. Each user can only have one playlist submitted, a new playlist uploaded will replace the older playlist. The Discord Bot is required and needs the correct permissions to read from the given channel.
-
-How to upload a playlist:
-
-- Spotify: [Exportify](https://exportify.app/) -> Click `Export` on a playlist -> upload `.csv`
-- YouTube: [Export Youtube Playlist](https://export-youtube-playlist.vercel.app/) -> Set `URL` to playlist URL -> Set `File Formats` to `CSV` -> `Export` -> upload `.csv`
-- Apple Music: [Apple Music's Exporter](https://support.apple.com/guide/music/save-a-copy-of-your-playlists-mus27cd5060f/mac) -> Select playlist -> choose File > Library > Export Playlist -> upload `.xml`
-
-To enable this mode, add `[modes.channel."Your Name"]` to `config.toml` with these options:
-
-- `channel-name` = name of text channel of user uploaded playlists.
-
-#### Example `config.toml`
-
-```toml
-[modes.channel."Liked Songs"]
-channel-name = "liked-songs-playlists"
-```
-
-### Incoming Livestream
-
-Proxies an incoming Icecast livestream to the radio. The current mode will be paused when the livestream is active and a short jingle will play when switching into and out of an livestream.
-
-Unlike other radio modes, livestreaming requires no configuration in `modes.toml`.
-
-To livestream, you'll need an Icecast compatible source client, [a list can be found on Icecast's webpage](https://icecast.org/apps/). I recommend [Mixxx](https://mixxx.org/) or [butt](https://danielnoethen.de/butt/). Settings for each client vary, but generally set:
-
-- Hostname: The IP or domain pointing to your server.
-- Port: `8001` (Port exposed by Liquidsoap, not Icecast)
-- Username: `streamer` or `LIVE_SOURCE_USERNAME` environment variable if set.
-- Password: `LIVE_SOURCE_PASSWORD` environment variable.
-- Mountpoint: `/live`
-
-## FAQ
-
-- Why are my track downloads of low accuracy/quality?
-- How do I replace the radio webpage?
-- How do I create a new radio mode?
-- I have a bug to report / feature idea!
