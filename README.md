@@ -7,9 +7,9 @@ A configurable self-hosted radio station with powerful modes.
 ![GitHub Tag](https://img.shields.io/github/v/tag/skearya/community.fm)
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/skearya/community.fm/build.yml)
 
-[Installation](https://img.shields.io/github/actions/workflow/status/skearya/community.fm/build.yml) •
-[Setup](https://img.shields.io/github/actions/workflow/status/skearya/community.fm/build.yml) •
-[FAQ](https://img.shields.io/github/actions/workflow/status/skearya/community.fm/build.yml)
+[Installation](#installation) •
+[Setup](docs/setup.md) •
+[FAQ](docs/faq.md)
 
 </div>
 
@@ -30,14 +30,14 @@ A configurable self-hosted radio station with powerful modes.
 
 ### Radio Modes
 
-| Mode                         | Description                                                                |
-| ---------------------------- | -------------------------------------------------------------------------- |
-| Local Songs                  | shuffles through a local library of music                                  |
-| Request Queue                | plays manually queued songs/albums/playlists from a URL or search          |
-| YouTube Playlist             | plays songs from a YouTube playlist or a single video                      |
-| Last.fm Top Tracks           | plays from users top scrobbled songs by Last.fm during a given time period |
-| Discord Channel of Playlists | plays songs from a text channel of Spotify/YouTube/Apple Music playlists   |
-| Incoming Livestream          | proxies an incoming livestream to the radio                                |
+| Mode                                                                       | Description                                                                |
+| -------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| [Local Songs](docs/setup.md#local-songs)                                   | shuffles through a local library of music                                  |
+| [Request Queue](docs/setup.md#request-queue)                               | plays manually queued songs/albums/playlists from a URL or search          |
+| [YouTube Playlist](docs/setup.md#youtube-playlist)                         | plays songs from a YouTube playlist or a single video                      |
+| [Last.fm Top Tracks](docs/setup.md#lastfm-top-tracks)                      | plays from users top scrobbled songs by Last.fm during a given time period |
+| [Discord Channel of Playlists](docs/setup.md#discord-channel-of-playlists) | plays songs from a text channel of Spotify/YouTube/Apple Music playlists   |
+| [Incoming Livestream](docs/setup.md#incoming-livestream)                   | proxies an incoming livestream to the radio                                |
 
 ## Installation
 
@@ -146,3 +146,7 @@ From the directory you created in Step 1 (which should now contain your customiz
 ```bash
 docker compose up -d
 ```
+
+Open up `http://localhost:8000/` in your browser and you should see community.fm playing your music.
+
+[Visit the setup documentation to enable the features and radio modes you want!](docs/setup.md)

@@ -1,15 +1,17 @@
 # Setup
 
-- Discord Bot
-- Streamrip Config
-- Reverse Proxying
-- Radio Modes
-    - Local Songs
-    - Request Queue
-    - YouTube Playlist
-    - Last.fm Top Tracks
-    - Discord Channel of Playlists
-    - Incoming Livestream
+- [Discord Bot](#discord-bot)
+- [Streamrip Config](#streamrip-config)
+- [Reverse Proxying](#reverse-proxying)
+
+### Radio Modes
+
+- [Local Songs](#local-songs)
+- [Request Queue](#request-queue)
+- [YouTube Playlist](#youtube-playlist)
+- [Last.fm Top Tracks](#lastfm-top-tracks)
+- [Discord Channel of Playlists](#discord-channel-of-playlists)
+- [Incoming Livestream](#incoming-livestream)
 
 ## Discord Bot
 
@@ -49,7 +51,7 @@ These instructions are for [Caddy](https://caddyserver.com/) specifically, but s
 1. Remove the `8080:8080` and `8000:8000` port mappings from `community-fm-server` and `community-fm-icecast` to stop exposing them directly.
 
 > [!NOTE]
-> You have to leave `community-fm-liquidsoap`'s `8001:8001` port mapping open if you want to accept [incoming livestreams]() as Caddy only proxies HTTP traffic.
+> You have to leave `community-fm-liquidsoap`'s `8001:8001` port mapping open if you want to accept [incoming livestreams](#incoming-livestream) as Caddy only proxies HTTP traffic.
 
 2. In your `Caddyfile`, setup two `reverse_proxy` rules for `community-fm-server:8080` (website + api) and `community-fm-icecast:8000` (audio stream).
 
@@ -89,7 +91,7 @@ directory = "/mixes"
 
 ## Request Queue
 
-Plays manually queued songs/albums/playlists from a URL or search. Controlling the queue is done through the Discord Bot. Only one request queue can be defined in the config.
+Plays manually queued songs/albums/playlists from a URL or search. Controlling the queue is done through the [Discord bot](#discord-bot). Only one request queue can be defined in the config.
 
 To enable this mode, add `[modes.queue."Your Name"]` to `config.toml` with these options:
 
@@ -125,7 +127,7 @@ playlist-id = "PLMvc7dwDCWDfeLEnRl4CREwbn1ipA8O6_"
 
 ## Last.fm Top Tracks
 
-Plays linked users top scrobbled songs from Last.fm during a given time period. Last.fm account linking is currently done through the Discord Bot with `/link-lastfm`.
+Plays linked users top scrobbled songs from Last.fm during a given time period. Last.fm account linking is currently done through the [Discord bot](#discord-bot) with `/link-lastfm`.
 
 A [Last.fm API account (link to create)](https://www.last.fm/api/account/create) is required to use this radio mode. The values of `Application name` and `Application description` can be anything. `Callback URL` and `Application homepage` can be left blank. Once you submit, set the environment variable `LASTFM_API_KEY` to "API key" and `LASTFM_SECRET` to "Shared secret".
 
@@ -158,7 +160,7 @@ period = "12month"
 
 ## Discord Channel of Playlists
 
-Plays songs from a given Discord text channel of exported Spotify/YouTube/Apple Music playlists. Each user can only have one playlist submitted, a new playlist uploaded will replace the older playlist. The Discord Bot is required and needs the correct permissions to read from the given channel.
+Plays songs from a given Discord text channel of exported Spotify/YouTube/Apple Music playlists. Each user can only have one playlist submitted, a new playlist uploaded will replace the older playlist. The [Discord bot](#discord-bot) is required and needs the correct permissions to read from the given channel.
 
 How to upload a playlist:
 
