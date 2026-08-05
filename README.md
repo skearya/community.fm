@@ -53,13 +53,7 @@ Download `docker-compose.yml`, `example.env`, and `modes.toml.example` by runnin
 
 ```bash
 curl -o docker-compose.yml https://raw.githubusercontent.com/skearya/community.fm/refs/heads/main/docker-compose.yml
-```
-
-```bash
 curl -o .env https://raw.githubusercontent.com/skearya/community.fm/refs/heads/main/.env.example
-```
-
-```bash
 curl -o modes.toml https://raw.githubusercontent.com/skearya/community.fm/refs/heads/main/modes.toml.example
 ```
 
