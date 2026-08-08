@@ -1,73 +1,15 @@
 # Setup
 
+- Radio Modes
+    - [Local Songs](#local-songs)
+    - [Request Queue](#request-queue)
+    - [YouTube Playlist](#youtube-playlist)
+    - [Last.fm Top Tracks](#lastfm-top-tracks)
+    - [Discord Channel of Playlists](#discord-channel-of-playlists)
+    - [Incoming Livestream](#incoming-livestream)
 - [Discord Bot](#discord-bot)
 - [Streamrip Config](#streamrip-config)
 - [Reverse Proxying](#reverse-proxying)
-
-### Radio Modes
-
-- [Local Songs](#local-songs)
-- [Request Queue](#request-queue)
-- [YouTube Playlist](#youtube-playlist)
-- [Last.fm Top Tracks](#lastfm-top-tracks)
-- [Discord Channel of Playlists](#discord-channel-of-playlists)
-- [Incoming Livestream](#incoming-livestream)
-
-## Discord Bot
-
-1. Go to the [Discord Developer Portal](https://discord.com/developers/applications).
-2. Click "New Application" in the top right corner.
-3. Enter a name for your application and accept the Developer ToS.
-4. Click "Create".
-5. In the left sidebar, click "Bot".
-6. Under "Privileged Gateway Intents" enable "Message Content Intent".
-7. Under the "Token" section, click "Reset Token". In `.env` set `DISCORD_BOT_TOKEN` to the new token.
-8. In the left sidebar, click "OAuth2".
-9. Under "Client Information", copy your "Client ID" and replace `YOUR_CLIENT_ID` in the URL below with the Client ID, visit it and invite the bot.
-
-```
-https://discord.com/oauth2/authorize?client_id=YOUR_CLIENT_ID&permissions=2150713408&integration_type=0&scope=bot
-```
-
-Restart with `docker compose up -d`.
-
-## Streamrip Config
-
-community.fm uses [streamrip](https://github.com/nathom/streamrip) and [yt-dlp](https://github.com/yt-dlp/yt-dlp) to download tracks. By default, streamrip can only download (no drm) SoundCloud tracks. You can download from Qobuz, Tidal, and Deezer using a streamrip config with the respective login keys. Refer to the official [streamrip wiki](https://github.com/nathom/streamrip/wiki) on how to install and configure it.
-
-Once you have a streamrip config, in `.env` set `STREAMRIP_CONFIG_PATH` to the path to your local streamrip config, which you can find by running `rip config path`. In your `docker-compose.yml`, uncomment the bind mount below.
-
-```yaml
-# Uncomment to use a streamrip config from `rip config path` for better downloads:
-# - ${STREAMRIP_CONFIG_PATH}:/root/.config/streamrip/config.toml:ro
-```
-
-Restart with `docker compose up -d`.
-
-## Reverse Proxying
-
-These instructions are for [Caddy](https://caddyserver.com/) specifically, but should be useful to anyone using another reverse proxy.
-
-1. Remove the `8080:8080` and `8000:8000` port mappings from `community-fm-server` and `community-fm-icecast` to stop exposing them directly.
-
-> [!NOTE]
-> You have to leave `community-fm-liquidsoap`'s `8001:8001` port mapping open if you want to accept [incoming livestreams](#incoming-livestream) as Caddy only proxies HTTP traffic.
-
-2. In your `Caddyfile`, setup two `reverse_proxy` rules for `community-fm-server:8080` (website + api) and `community-fm-icecast:8000` (audio stream).
-
-3. In your `.env`, set `ICECAST_BASE_URL` to wherever `community-fm-icecast` is reverse proxied, for example `https://listen.example.com/`
-
-#### Example `Caddyfile`
-
-```Caddyfile
-radio.example.com {
-	reverse_proxy community-fm-server:8080
-}
-
-listen.example.com {
-	reverse_proxy community-fm-icecast:8000
-}
-```
 
 ## Local Songs
 
@@ -192,3 +134,61 @@ To livestream, you'll need an Icecast compatible source client, [a list can be f
 - Username: `streamer` or `LIVE_SOURCE_USERNAME` environment variable if set.
 - Password: `LIVE_SOURCE_PASSWORD` environment variable.
 - Mountpoint: `/live`
+
+## Discord Bot
+
+The Discord bot lets you stream the radio to voice channels, change the radio mode, skip songs, queue music, and more. It is a prerequisite to the [Request Queue](#request-queue), [Last.fm Top Tracks](#lastfm-top-tracks), and [Discord Channel of Playlists](#discord-channel-of-playlists) radio modes.
+
+1. Go to the [Discord Developer Portal](https://discord.com/developers/applications).
+2. Click "New Application" in the top right corner.
+3. Enter a name for your application and accept the Developer ToS.
+4. Click "Create".
+5. In the left sidebar, click "Bot".
+6. Under "Privileged Gateway Intents" enable "Message Content Intent".
+7. Under the "Token" section, click "Reset Token". In `.env` set `DISCORD_BOT_TOKEN` to the new token.
+8. In the left sidebar, click "OAuth2".
+9. Under "Client Information", copy your "Client ID" and replace `YOUR_CLIENT_ID` in the URL below with the Client ID, visit it and invite the bot.
+
+```
+https://discord.com/oauth2/authorize?client_id=YOUR_CLIENT_ID&permissions=2150713408&integration_type=0&scope=bot
+```
+
+Restart with `docker compose up -d`.
+
+## Streamrip Config
+
+community.fm uses [streamrip](https://github.com/nathom/streamrip) and [yt-dlp](https://github.com/yt-dlp/yt-dlp) to download tracks. By default, streamrip can only download SoundCloud tracks (without drm). You can also download from Qobuz, Tidal, and Deezer using a streamrip config with the respective login keys. Using any one of these services greatly improves search quality. Refer to the official [streamrip wiki](https://github.com/nathom/streamrip/wiki) on how to install and configure it.
+
+Once you have a streamrip config, set `STREAMRIP_CONFIG_PATH` in `.env` to the path to your local streamrip config, which you can find by running `rip config path`. Additionally, in your `docker-compose.yml`, uncomment the config bind mount on `comunnity-fm-server` below.
+
+```yaml
+# Uncomment to use a streamrip config from `rip config path` for better downloads:
+# - ${STREAMRIP_CONFIG_PATH}:/root/.config/streamrip/config.toml:ro
+```
+
+Restart with `docker compose up -d`.
+
+## Reverse Proxying
+
+These instructions are for [Caddy](https://caddyserver.com/) specifically, but should be useful to anyone using another reverse proxy.
+
+1. Remove the `8080:8080` and `8000:8000` port mappings from `community-fm-server` and `community-fm-icecast` to stop exposing them directly.
+
+> [!NOTE]
+> You have to leave `community-fm-liquidsoap`'s `8001:8001` port mapping open if you want to accept [incoming livestreams](#incoming-livestream) as Caddy only proxies HTTP traffic.
+
+2. In your `Caddyfile`, setup two `reverse_proxy` rules for `community-fm-server:8080` (website + api) and `community-fm-icecast:8000` (audio stream).
+
+3. In your `.env`, set `ICECAST_BASE_URL` to wherever `community-fm-icecast` is reverse proxied, for example `https://listen.example.com/`
+
+#### Example `Caddyfile`
+
+```Caddyfile
+radio.example.com {
+	reverse_proxy community-fm-server:8080
+}
+
+listen.example.com {
+	reverse_proxy community-fm-icecast:8000
+}
+```

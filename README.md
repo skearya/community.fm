@@ -7,10 +7,6 @@ A configurable self-hosted radio station with powerful modes.
 ![GitHub Tag](https://img.shields.io/github/v/tag/skearya/community.fm)
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/skearya/community.fm/build.yml)
 
-[Installation](#installation) •
-[Setup](docs/setup.md) •
-[FAQ](docs/faq.md)
-
 </div>
 
 > [!NOTE]
@@ -18,7 +14,26 @@ A configurable self-hosted radio station with powerful modes.
 
 ![](assets/desktop.png)
 
-...and you can also listen on [VLC](https://www.videolan.org/), [MPV](https://mpv.io/), [IINA](https://iina.io/), [Broadcasts](https://apps.apple.com/us/app/broadcasts/id1469995354), [foobar2000](https://www.foobar2000.org/), [ffplay](https://ffmpeg.org/ffplay.html), [Icecast compatible players](https://icecast.org/apps/#players), and a Discord bot in VCs.
+This community.fm instance is a complete radio station configured using this `modes.toml`.
+
+```toml
+[modes.youtube."DJ Mixes"]
+playlist-id = "PLMvc7dwDCWDfeLEnRl4CREwbn1ipA8O6_"
+
+[modes.last-fm."Weekly Top Tracks"]
+period = "7day"
+
+[modes.channel."Liked Songs"]
+channel-name = "liked-songs"
+
+[modes.local."Local Songs"]
+directory = "/music"
+
+[modes.queue."Request Queue"]
+autoswitch = true
+```
+
+...and you can also listen on [VLC](https://www.videolan.org/), [MPV](https://mpv.io/), [IINA](https://iina.io/), [Broadcasts](https://apps.apple.com/us/app/broadcasts/id1469995354), [foobar2000](https://www.foobar2000.org/), [ffplay](https://ffmpeg.org/ffplay.html), [Icecast compatible players](https://icecast.org/apps/#players), and through the [Discord bot](docs/setup#discord-bot).
 
 ## Features
 
@@ -38,6 +53,21 @@ A configurable self-hosted radio station with powerful modes.
 | [Last.fm Top Tracks](docs/setup.md#lastfm-top-tracks)                      | plays from users top scrobbled songs by Last.fm during a given time period |
 | [Discord Channel of Playlists](docs/setup.md#discord-channel-of-playlists) | plays songs from a text channel of Spotify/YouTube/Apple Music playlists   |
 | [Incoming Livestream](docs/setup.md#incoming-livestream)                   | proxies an incoming livestream to the radio                                |
+
+## Table of Contents
+
+- [Installation](#installation) (start here!)
+- [Setup](docs/setup.md)
+    - [Radio Modes](#radio-modes)
+    - [Discord Bot](docs/setup.md#discord-bot)
+    - [Streamrip Config](docs/setup.md#streamrip-config)
+    - [Reverse Proxying](docs/setup.md#reverse-proxying)
+- [FAQ](docs/faq.md)
+    - [Why are my track downloads of low accuracy/quality?](docs/faq.md#why-are-my-track-downloads-of-low-accuracyquality)
+    - [How do I replace the radio webpage?](docs/faq.md#how-do-i-replace-the-radio-webpage)
+    - [How do I create a new radio mode?](docs/faq.md#how-do-i-create-a-new-radio-mode)
+    - [I have a bug to report / feature idea!](docs/faq.md#i-have-a-bug-to-report--feature-idea)
+    - [Something else?](docs/faq.md#something-else)
 
 ## Installation
 
@@ -82,7 +112,7 @@ community.fm needs at least one radio mode active in order to start. The "Local 
 
 <details>
 
-<summary><code>.env</code></summary>
+<summary>Default <code>.env</code></summary>
 
 ```bash
 # URL of Icecast instance (ex: http://localhost:8000/ or https://listen.example.com/)
@@ -112,7 +142,7 @@ LOCAL_MUSIC_DIRECTORY=?
 
 <details>
 
-<summary><code>modes.toml</code></summary>
+<summary>Default <code>modes.toml</code></summary>
 
 ```toml
 [modes.local."Local Songs"]
@@ -141,6 +171,6 @@ From the directory you created in Step 1 (which should now contain your customiz
 docker compose up -d
 ```
 
-Open up `http://localhost:8000/` in your browser and you should see community.fm playing your music.
+Open up `http://localhost:8080/` in your browser and you should see community.fm playing your music.
 
 [Visit the setup documentation to enable the features and radio modes you want!](docs/setup.md)
