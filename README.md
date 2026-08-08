@@ -89,7 +89,7 @@ curl -o modes.toml https://raw.githubusercontent.com/skearya/community.fm/refs/h
 
 ### Step 2 - Edit the `.env` and `modes.toml` files with custom values
 
-Radio modes are enabled in `modes.toml`, [see the full list of supported modes here](). You can enable any combination of modes, including multiple instances of the same mode. Using a mode looks like so:
+Radio modes are enabled in `modes.toml`, [see the full list of supported modes here](#radio-modes). You can enable any combination of modes, including multiple instances of the same mode. Using a mode looks like so:
 
 ```toml
 [modes.(type)."(name)"]
