@@ -61,14 +61,16 @@ class LastFMMode(RadioMode):
 
     async def next(self) -> LiquidsoapUri | None:
         if not self.top:
-            logger.info("No Last.fm top tracks have been fetched.")
+            logger.info(f"No Last.fm '{self.period}' top tracks have been fetched.")
             return None
 
-        user = random.choice(list(self.top.keys()))
+        choices = [(user, items) for user, items in self.top.items() if items]
 
-        if not (items := self.top[user]):
-            logger.info("User has no songs in playlist?")
+        if not choices:
+            logger.info(f"All users have no songs listened to in '{self.period}'?")
             return None
+
+        user, items = random.choice(choices)
 
         weights = [DECAY_BASE**i for i in range(len(items))]
         item = random.choices(items, weights=weights)[0]

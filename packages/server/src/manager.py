@@ -20,7 +20,7 @@ from utils import ConfigError, quoted
 if TYPE_CHECKING:
     from state import State
 
-RETRIES_BEFORE_MODE_SWITCH = 3
+RETRIES_BEFORE_MODE_SWITCH = 5
 DOWNLOADS_BEFORE_DELETION = 3
 
 MODE_CONSTRUCTORS = {

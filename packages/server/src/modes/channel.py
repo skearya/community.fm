@@ -40,12 +40,13 @@ class ChannelMode(RadioMode):
             logger.info("No channel songs have been loaded yet.")
             return None
 
-        user = random.choice(list(self.entries.keys()))
+        choices = [entry for entry in self.entries.values() if entry.tracks]
 
-        if not (entry := self.entries[user]):
-            logger.info("User has no songs in playlist?")
+        if not choices:
+            logger.info("All users have no songs in their playlist?")
             return None
 
+        entry = random.choice(choices)
         song = random.choice(entry.tracks)
 
         logger.debug(f"Fetching channel song: {song}")

@@ -50,6 +50,7 @@ class YoutubeMode(RadioMode):
             random.shuffle(self.order)
 
         track = self.order.pop()
+
         logger.debug(f"Fetching video: {track.url}")
 
         if dl := await self.state.pls.give(track):
