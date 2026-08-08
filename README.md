@@ -14,7 +14,7 @@ A configurable self-hosted radio station with powerful modes.
 
 ![](assets/desktop.png)
 
-This community.fm instance is a complete radio station configured using this `modes.toml`.
+This community.fm instance is a complete radio station configured using this tiny `modes.toml`.
 
 ```toml
 [modes.youtube."DJ Mixes"]
