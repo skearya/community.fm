@@ -3,51 +3,5 @@ services:
         build:
             dockerfile: Dockerfile
             target: ${MODE:-production}
-        container_name: community-fm-server
-        restart: unless-stopped
-        stop_grace_period: 1s
-        ports:
-            - 8080:8080
-        env_file:
-            - .env
-        volumes:
-            - ./modes.toml:/config/modes.toml:ro
-            - community-fm-data:/data:rw
-            - community-fm-downloads:/downloads:rw
-            - ${LOCAL_MUSIC_DIRECTORY}:/music:ro
-
-            # Uncomment to use a streamrip config from `rip config path` for better downloads:
-            # - ${STREAMRIP_CONFIG_PATH}:/root/.config/streamrip/config.toml:ro
     community-fm-liquidsoap:
         build: liquidsoap
-        container_name: community-fm-liquidsoap
-        restart: unless-stopped
-        ports:
-            - 8001:8001
-        environment:
-            - ICECAST_SOURCE_PASSWORD
-            - LIVE_SOURCE_USERNAME=${LIVE_SOURCE_USERNAME:-streamer}
-            - LIVE_SOURCE_PASSWORD
-        volumes:
-            - community-fm-downloads:/downloads:rw
-            - ${LOCAL_MUSIC_DIRECTORY}:/music:ro
-    community-fm-icecast:
-        image: ghcr.io/libretime/icecast:2.4.4
-        container_name: community-fm-icecast
-        restart: unless-stopped
-        ports:
-            - 8000:8000
-        environment:
-            - ICECAST_SOURCE_PASSWORD
-            - ICECAST_RELAY_PASSWORD
-            - ICECAST_ADMIN_PASSWORD
-            - ICECAST_ADMIN_USERNAME
-            - ICECAST_ADMIN_EMAIL
-            - ICECAST_LOCATION
-            - ICECAST_HOSTNAME
-            - ICECAST_MAX_CLIENTS
-            - ICECAST_MAX_SOURCES
-
-volumes:
-    community-fm-data:
-    community-fm-downloads:
