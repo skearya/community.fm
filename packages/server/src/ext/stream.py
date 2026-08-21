@@ -100,7 +100,12 @@ class Stream(commands.Cog):
         for key in fields(entry.metadata):
             value = getattr(entry.metadata, key.name)
 
-            if value is None or len(value) > 1024 or key.name == "cover":
+            if (
+                value is None
+                or len(value) > 512
+                or key.name == "cover"
+                or key.name == "avatar"
+            ):
                 continue
 
             embed.add_field(name=key.name, value=value)
