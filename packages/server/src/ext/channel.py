@@ -81,21 +81,21 @@ class ChannelIngester(commands.Cog):
         entries: dict[int, ChannelModeEntry],
     ) -> int | None:
         try:
+            assert attachment.content_type
+
             async with self.bot.state.session.get(attachment.url) as response:
                 response.raise_for_status()
                 text = await response.text()
 
-            assert attachment.content_type
-
-            tracks = (
-                self.csv(text)
-                if attachment.content_type.startswith("text/csv")
-                else self.xml(text)
-                if attachment.content_type.startswith("application/xml")
-                else None
-            )
-
-            if not tracks:
+            if not (
+                tracks := (
+                    self.csv(text)
+                    if attachment.content_type.startswith("text/csv")
+                    else self.xml(text)
+                    if attachment.content_type.startswith("application/xml")
+                    else None
+                )
+            ):
                 return None
 
             entries[message.author.id] = ChannelModeEntry(

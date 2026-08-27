@@ -1,3 +1,4 @@
+import asyncio
 from operator import itemgetter
 
 from loguru import logger
@@ -31,7 +32,7 @@ class Pls:
         await self.youtube.logout()
 
     def services(self) -> list[str]:
-        return [*self.streamrip.services()]
+        return [*self.streamrip.services(), *self.youtube.services()]
 
     async def give(self, track: Track) -> Download | None:
         if track.url and not track.id and (updated := await self.url(track.url)):
@@ -106,14 +107,20 @@ class Pls:
     ) -> list[tuple[float, Summary]]:
         text = f"{query[0]} - {query[1]}" if isinstance(query, tuple) else query
 
+        tasks = await asyncio.gather(
+            self.streamrip.search(text, type, services),
+            self.youtube.search(text, type, services),
+            return_exceptions=True,
+        )
+
         results: list[Summary] = []
 
-        for pls in [self.streamrip]:
-            try:
-                if not services or any(s in pls.services() for s in services):
-                    results.extend(await pls.search(text, type, services))
-            except Exception:
-                logger.exception(f"{pls.name()} search")
+        for result in tasks:
+            if isinstance(result, BaseException):
+                logger.error(f"Search error: {result}")
+                continue
+
+            results.extend(result)
 
         ranked = [
             (similarity(query, summary.artist, summary.title), summary)
