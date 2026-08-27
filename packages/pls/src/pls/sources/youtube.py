@@ -54,7 +54,7 @@ class YoutubePls:
                     or result.get("albumId")
                     or result.get("playlistId")
                     or "browseId" in result
-                    and result["browseId"].replace("VL", "", 1)
+                    and result["browseId"].removeprefix("VL")
                 ):
                     return None
 
