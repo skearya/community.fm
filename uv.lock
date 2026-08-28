@@ -981,7 +981,7 @@ wheels = [
 [[package]]
 name = "streamrip"
 version = "2.2.0"
-source = { git = "https://github.com/skearya/streamrip?rev=dev#0cfff48294ba1887c325acf7325a19498d09ec80" }
+source = { git = "https://github.com/skearya/streamrip?rev=dev#4f5d8659ace9174154817fe3cfcba19edde8222c" }
 dependencies = [
     { name = "aiodns" },
     { name = "aiofiles" },
