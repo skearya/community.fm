@@ -122,10 +122,19 @@ class Pls:
 
             results.extend(result)
 
-        ranked = [
-            (similarity(query, summary.artist, summary.title), summary)
-            for summary in results
-        ]
+        ranked: list[tuple[float, Summary]] = []
+
+        for summary in results:
+            score, info = similarity(query, summary.artist, summary.title)
+
+            match info:
+                case None:
+                    pass
+                case (artist2, title2):
+                    summary.artist = artist2
+                    summary.title = title2
+
+            ranked.append((score, summary))
 
         ranked.sort(key=itemgetter(0), reverse=True)
 

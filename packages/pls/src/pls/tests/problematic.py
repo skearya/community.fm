@@ -43,6 +43,7 @@ problematic = [
     ('Danny Brown, ta Ukrainka, Zheani, Cynthoni', 'The End'),
     ('matt proxy, Current Joys, never goodbye', 'God (with current joys & never goodbye)'),
     ('Jamie Paige, unit.0', 'Dyad'),
+    ('ミツキヨ', 'Blooming Afternoon'),
 ]
 # fmt: on
 
