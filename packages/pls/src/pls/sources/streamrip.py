@@ -153,9 +153,7 @@ class StreamripPls:
         return results
 
     async def info(self, source: str, id: str, type: MediaType) -> Media | None:
-        client = self.client(source)
-
-        if client is None:
+        if not (client := self.client(source)):
             return None
 
         if type == "track" and (
@@ -197,9 +195,7 @@ class StreamripPls:
         return None
 
     async def id(self, source: str, id: str, type: MediaType) -> Download | None:
-        client = self.client(source)
-
-        if client is None:
+        if not (client := self.client(source)):
             return None
 
         if type == "track":
