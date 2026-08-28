@@ -252,7 +252,10 @@
 {/snippet}
 
 {#snippet previous(entry: LiquidsoapEntry)}
-	<div class="flex snap-start gap-x-5.5">
+	<div
+		class="flex snap-start gap-x-5.5"
+		title={`${entry.metadata.title} - ${entry.metadata.artist}`}
+	>
 		<Image
 			loading="lazy"
 			url={`/api/cover/${entry.id}`}
