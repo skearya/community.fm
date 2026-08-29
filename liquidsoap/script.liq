@@ -67,8 +67,8 @@ radio =
     [feed, loading_sound]
   )
 
-# Skip blanks longer than 3 seconds
-radio = blank.skip(max_blank=3.0, radio)
+# Eat blanks longer than 5 seconds
+radio = blank.eat(max_blank=5.0, radio)
 
 # Crossfade songs
 radio = crossfade(radio)
