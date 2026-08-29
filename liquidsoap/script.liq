@@ -67,13 +67,13 @@ radio =
     [feed, loading_sound]
   )
 
-# Eat blanks longer than 5 seconds
-radio = blank.eat(max_blank=5.0, radio)
+# Eat blanks longer than 10 seconds
+radio = blank.eat(max_blank=10.0, radio)
 
 # Crossfade songs
 radio = crossfade(radio)
 
-# Server for live mixes (Icecast-compatible)
+# Server for livestreams (Icecast-compatible)
 live =
   input.harbor(
     "live",
@@ -85,8 +85,11 @@ live =
     max=10.00
   )
 
-# Add mode = "Stream" metadata to live mix
-live = metadata.map(fun (_) -> begin [("mode", "Stream")] end, live)
+# Make the livestream unavailable when streaming blank
+live = blank.strip(max_blank=10.0, live)
+
+# Add mode = "Livestream" metadata to livestream
+live = metadata.map(fun (_) -> begin [("mode", "Livestream")] end, live)
 
 def to_live(a, b) =
   add(normalize=false, [cross.simple(a, b), once(stream_intro_sound)])
@@ -96,7 +99,7 @@ def to_radio(a, b) =
   add(normalize=false, [cross.simple(a, b), once(radio_intro_sound)])
 end
 
-# Use live input if exists, otherwise play feed, or fatal error sound
+# Use livestream if exists, otherwise play feed, or fatal error sound
 radio =
   fallback(
     track_sensitive=false,
