@@ -12,7 +12,12 @@ from utils import ConfigError
 if TYPE_CHECKING:
     from state import State
 
-DECAY_BASE = 0.99
+
+@dataclass()
+class LastFMEntry:
+    user: User
+    tracks: list[LastFMItem]
+    avatar: str | None
 
 
 @dataclass()
@@ -39,8 +44,8 @@ class LastFMMode(RadioMode):
 
         self.lastfm = lastfm
         self.period = options["period"]
-        self.top: dict[User, list[LastFMItem]] = {}
-        self.avatars: dict[User, str | None] = {}
+        self.entries: list[LastFMEntry] = []
+        self.order: list[int] = []
 
     async def setup(self) -> None:
         if not (users := await self.state.db.get_users()):
@@ -51,8 +56,11 @@ class LastFMMode(RadioMode):
             f"Getting Last.fm {self.period} top tracks for {len(users)} user(s)."
         )
 
-        self.top = {user: await self.gettoptracks(user) for user in users}
-        self.avatars = {user: await self.getinfo(user) for user in users}
+        self.entries = [
+            LastFMEntry(user, await self.gettoptracks(user), await self.getinfo(user))
+            for user in users
+        ]
+        self.order = []
 
         logger.info(f"Got Last.fm '{self.period}' top tracks.")
 
@@ -60,20 +68,21 @@ class LastFMMode(RadioMode):
         await self.setup()
 
     async def next(self) -> LiquidsoapUri | None:
-        if not self.top:
+        if not self.entries:
             logger.info(f"No Last.fm '{self.period}' top tracks have been fetched.")
             return None
 
-        choices = [(user, items) for user, items in self.top.items() if items]
+        if not self.order:
+            self.order = [i for i, entry in enumerate(self.entries) if entry.tracks]
 
-        if not choices:
-            logger.info(f"All users have no songs listened to in '{self.period}'?")
-            return None
+            if not self.order:
+                logger.info(f"All users have no songs listened to in '{self.period}'?")
+                return None
 
-        user, items = random.choice(choices)
+            random.shuffle(self.order)
 
-        weights = [DECAY_BASE**i for i in range(len(items))]
-        item = random.choices(items, weights=weights)[0]
+        entry = self.entries[self.order.pop()]
+        item = random.choice(entry.tracks)
 
         logger.debug(f"Fetching Last.fm item: {item.track}")
 
@@ -81,9 +90,9 @@ class LastFMMode(RadioMode):
             return LiquidsoapUri(
                 dl.path,
                 LiquidsoapMetadata(
-                    user=user.lastfm_username,
+                    user=entry.user.lastfm_username,
+                    avatar=entry.avatar,
                     playcount=str(item.playcount),
-                    avatar=self.avatars[user],
                 ),
             )
 

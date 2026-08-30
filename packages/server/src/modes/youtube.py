@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, TypedDict
 from loguru import logger
 from models import LiquidsoapMetadata, LiquidsoapUri
 from modes.mode import RadioMode
-from pls import Album, Playlist, Track
+from pls import Track
 
 if TYPE_CHECKING:
     from state import State
@@ -23,17 +23,19 @@ class YoutubeMode(RadioMode):
 
         self.playlist_id = options["playlist_id"]
         self.playlist: list[Track] = []
-        self.order: list[Track] = []
+        self.order: list[int] = []
 
     async def setup(self) -> None:
-        logger.info(f"Getting YouTube videos from playlist {self.playlist_id}...")
+        logger.info(f"Getting YouTube video(s) from '{self.playlist_id}'...")
 
-        media = await self.state.pls.info("youtube", self.playlist_id, "playlist")
+        if not (
+            media := await self.state.pls.info("youtube", self.playlist_id, "playlist")
+        ):
+            logger.error(f"Failed getting YouTube video(s) from '{self.playlist_id}'!")
+            return
 
-        if isinstance(media, Track):
-            self.playlist = [media]
-        elif isinstance(media, Album | Playlist):
-            self.playlist = media.items
+        self.playlist = [media] if isinstance(media, Track) else media.items
+        self.order = []
 
         logger.info(f"Got {len(self.playlist)} YouTube video(s).")
 
@@ -46,10 +48,10 @@ class YoutubeMode(RadioMode):
             return None
 
         if not self.order:
-            self.order = self.playlist.copy()
+            self.order = list(range(len(self.playlist)))
             random.shuffle(self.order)
 
-        track = self.order.pop()
+        track = self.playlist[self.order.pop()]
 
         logger.debug(f"Fetching video: {track.url}")
 

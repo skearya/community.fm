@@ -28,6 +28,7 @@ class ChannelMode(RadioMode):
 
         self.channel_name = options["channel_name"]
         self.entries: dict[int, ChannelModeEntry] = {}
+        self.order: list[int] = []
 
     async def setup(self) -> None:
         pass
@@ -40,21 +41,24 @@ class ChannelMode(RadioMode):
             logger.info("No channel songs have been loaded yet.")
             return None
 
-        choices = [entry for entry in self.entries.values() if entry.tracks]
+        if not self.order:
+            self.order = [id for id, entry in self.entries.items() if entry.tracks]
 
-        if not choices:
-            logger.info("All users have no songs in their playlist?")
-            return None
+            if not self.order:
+                logger.info("All users have no songs in their playlist?")
+                return None
 
-        entry = random.choice(choices)
-        song = random.choice(entry.tracks)
+            random.shuffle(self.order)
 
-        logger.debug(f"Fetching channel song: {song}")
+        entry = self.entries[self.order.pop()]
+        track = random.choice(entry.tracks)
 
-        if dl := await self.state.pls.give(song):
+        logger.debug(f"Fetching channel song: {track}")
+
+        if dl := await self.state.pls.give(track):
             return LiquidsoapUri(
                 dl.path,
                 LiquidsoapMetadata(user=entry.username, avatar=entry.avatar_url),
             )
 
-        logger.warning(f"Failed to download channel song: {song}")
+        logger.warning(f"Failed to download channel song: {track}")

@@ -39,6 +39,9 @@ class ChannelIngester(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: Message) -> None:
+        if message.author.bot:
+            return
+
         mode = next(
             (
                 mode
@@ -49,7 +52,7 @@ class ChannelIngester(commands.Cog):
             None,
         )
 
-        if not mode or message.author.bot or not (attachment := self.find(message)):
+        if not mode or not (attachment := self.find(message)):
             return
 
         if count := await self.update(message, attachment, mode.entries):
