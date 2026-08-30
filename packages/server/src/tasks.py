@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     from state import State
 
 ICECAST_POLL_INTERVAL = 1
-MODE_RELOAD_INTERVAL = 60 * 30
+MODE_RELOAD_INTERVAL = 60 * 60
 
 
 async def icecast_poller(state: State):
