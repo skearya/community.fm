@@ -25,12 +25,15 @@ class LocalSongsMode(RadioMode):
 
         self.directory = options["directory"]
         self.songs: list[Path] = []
-        self.order: list[Path] = []
+        self.order: list[int] = []
 
     async def setup(self) -> None:
         self.songs = [
-            file for file in Path(self.directory).rglob("*") if file.suffix in AUDIO_EXT
+            file
+            for file in Path(self.directory).rglob("*")
+            if file.is_file() and file.suffix in AUDIO_EXT
         ]
+        self.order = []
 
     async def reload(self) -> None:
         await self.setup()
@@ -41,9 +44,9 @@ class LocalSongsMode(RadioMode):
             return None
 
         if not self.order:
-            self.order = self.songs.copy()
+            self.order = list(range(len(self.songs)))
             random.shuffle(self.order)
 
-        return LiquidsoapUri(
-            str(self.order.pop()), LiquidsoapMetadata(), deletable=False
-        )
+        song = self.songs[self.order.pop()]
+
+        return LiquidsoapUri(str(song), LiquidsoapMetadata(), deletable=False)
