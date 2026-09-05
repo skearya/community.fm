@@ -39,12 +39,6 @@ radio_intro_sound =
 loading_sound =
   asset("Loading", "/etc/liquidsoap/assets/loading.mp3", mode="Loading")
 
-def next() =
-  uri = http.get("#{BASE_URL}/next")
-
-  if uri == "LOADING" then null else request.create(uri) end
-end
-
 # Build the feed from the server
 feed =
   request.dynamic(
@@ -85,9 +79,6 @@ live =
     max=10.00
   )
 
-# Make the livestream unavailable when streaming blank
-live = blank.strip(max_blank=10.0, live)
-
 # Add mode = "Livestream" metadata to livestream
 live = metadata.map(fun (_) -> begin [("mode", "Livestream")] end, live)
 
@@ -108,7 +99,7 @@ radio =
     [live, radio, fatal_error_sound]
   )
 
-# Stream it out in OGG and MP3
+# Stream out in OGG
 output.icecast(
   %mp3,
   host="community-fm-icecast",
@@ -118,6 +109,7 @@ output.icecast(
   radio
 )
 
+# Stream out in MP3
 output.icecast(
   %vorbis.abr(bitrate = 192, max_bitrate = 256, min_bitrate = 128),
   host="community-fm-icecast",
