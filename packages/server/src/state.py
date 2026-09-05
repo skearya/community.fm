@@ -36,11 +36,10 @@ class State:
                 LiquidsoapMetadata(
                     title="Initializing", artist="community.fm", mode="Initializing"
                 ),
-                None,
             )
         )
-
         self.history: deque[LiquidsoapEntry] = deque(maxlen=MAX_METADATA_HISTORY)
+        self.livestream_metadata_override: LiquidsoapEntry | None = None
 
         self.tasks = [
             asyncio.create_task(icecast_poller(self)),

@@ -14,19 +14,23 @@ class LiquidsoapEntry:
     metadata: LiquidsoapMetadata
     cover: tuple[str, bytes] | None
 
-    def __init__(self, metadata: LiquidsoapMetadata, cover: str | None):
+    def __init__(
+        self, metadata: LiquidsoapMetadata, cover: str | tuple[str, bytes] | None = None
+    ):
         self.id = uuid.uuid4()
         self.time = time.time()
         self.metadata = metadata
         self.cover = None
 
-        if cover:
+        if isinstance(cover, str):
             match cover.split(",", 1):
                 case [header, data] if search := re.search("data:(.*);", header):
                     mime = search.group(1)
                     decoded = base64.b64decode(data)
 
                     self.cover = (mime, decoded)
+        elif isinstance(cover, tuple):
+            self.cover = cover
 
     def serializable(entry: LiquidsoapEntry) -> SerializableLiquidsoapEntry:
         return {

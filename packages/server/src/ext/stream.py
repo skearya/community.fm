@@ -1,4 +1,6 @@
 import asyncio
+import dataclasses
+import json
 from dataclasses import fields
 from io import BytesIO
 from itertools import islice
@@ -8,6 +10,7 @@ from bot import CustomBot
 from discord import Interaction, Member, app_commands
 from discord.ext import commands
 from loguru import logger
+from models import LiquidsoapEntry, LiquidsoapMetadata
 from utils import header
 
 
@@ -163,6 +166,76 @@ class Stream(commands.Cog):
             response.raise_for_status()
 
             await interaction.response.send_message("Skipped.")
+
+    @app_commands.command(
+        name="livestream-metadata-override",
+        description="Override metadata and set a cover for upcoming livestreams.",
+    )
+    @app_commands.describe(
+        dictionary='JSON dictionary of metadata, ex: "{"title": "epic stream", "artist": "skeary"}"',
+        cover=".png/.jpeg cover art",
+    )
+    @app_commands.guild_only()
+    async def livestream_metadata_override(
+        self,
+        interaction: Interaction,
+        dictionary: str,
+        cover: discord.Attachment | None,
+    ):
+        keys = [field.name for field in dataclasses.fields(LiquidsoapMetadata)]
+
+        parsed = json.loads(dictionary)
+
+        if not isinstance(parsed, dict):
+            await interaction.response.send_message("Argument wasn't a dictionary.")
+            return
+
+        for key in parsed:
+            if key not in keys:
+                await interaction.response.send_message(f"Invalid key '{key}'.")
+                return
+
+        for value in parsed.values():
+            if not isinstance(value, str):
+                await interaction.response.send_message(f"'{value}' must be a string.")
+                return
+
+        metadata = LiquidsoapMetadata(**parsed)
+
+        if cover and cover.content_type:
+            if cover.content_type != "image/png" and cover.content_type != "image/jpeg":
+                await interaction.response.send_message("Cover must be a .png/jpeg.")
+                return
+
+            bytes = await cover.read()
+            entry = LiquidsoapEntry(metadata, (cover.content_type, bytes))
+        else:
+            entry = LiquidsoapEntry(metadata)
+
+        self.bot.state.livestream_metadata_override = entry
+
+        await interaction.response.send_message(
+            "Applied metadata override for upcoming livestream."
+        )
+
+    @app_commands.command(
+        name="livestream-metadata-override-remove",
+        description="Remove metadata override for upcoming livestreams.",
+    )
+    @app_commands.guild_only()
+    async def livestream_metadata_override_remove(
+        self,
+        interaction: Interaction,
+    ):
+        if not self.bot.state.livestream_metadata_override:
+            await interaction.response.send_message("No metadata override to remove.")
+            return
+
+        self.bot.state.livestream_metadata_override = None
+
+        await interaction.response.send_message(
+            "Removed metadata override for upcoming livestreams."
+        )
 
     async def status_updater(self):
         async with self.bot.state.liquidsoap.subscribe() as queue:

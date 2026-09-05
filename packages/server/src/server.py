@@ -39,7 +39,12 @@ async def handle_update_metadata(request: web.Request) -> web.Response:
 
     cover = body.pop("cover", None)
     metadata = LiquidsoapMetadata(**body)
-    entry = LiquidsoapEntry(metadata, cover)
+
+    if metadata.mode == "Livestream" and state.livestream_metadata_override:
+        entry = state.livestream_metadata_override
+        entry.metadata.mode = "Livestream"
+    else:
+        entry = LiquidsoapEntry(metadata, cover)
 
     state.history.append(state.liquidsoap.value)
     state.liquidsoap.update(entry)
