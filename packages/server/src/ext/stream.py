@@ -219,7 +219,7 @@ class Stream(commands.Cog):
         )
 
     @app_commands.command(
-        name="livestream-metadata-override-remove",
+        name="livestream-metadata-remove",
         description="Remove metadata override for upcoming livestreams.",
     )
     @app_commands.guild_only()
