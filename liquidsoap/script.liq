@@ -2,7 +2,7 @@
 
 BASE_URL =
   environment.get(
-    default="http://community-fm-server:8081", "INTERNAL_ICECAST_BASE_URL"
+    default="http://community-fm-server:8081", "INTERNAL_SERVER_BASE_URL"
   )
 
 settings.encoder.metadata.export :=
