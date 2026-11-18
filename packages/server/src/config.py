@@ -17,5 +17,9 @@ class Config:
     DATABASE_FILEPATH = "/data/community-fm.db"
     PLS_DOWNLOAD_DIRECTORY = "/downloads"
 
-    ICECAST_BASE_URL = "http://community-fm-icecast:8000"
-    LIQUIDSOAP_BASE_URL = "http://community-fm-liquidsoap:8002"
+    ICECAST_BASE_URL = environ.get(
+        "INTERNAL_ICECAST_BASE_URL", default="http://community-fm-icecast:8000"
+    )
+    LIQUIDSOAP_BASE_URL = environ.get(
+        "INTERNAL_LIQUIDSOAP_BASE_URL", "http://community-fm-liquidsoap:8002"
+    )

@@ -1,6 +1,9 @@
 #!/usr/bin/liquidsoap
 
-BASE_URL = "http://community-fm-server:8081"
+BASE_URL =
+  environment.get(
+    default="http://community-fm-server:8081", "INTERNAL_ICECAST_BASE_URL"
+  )
 
 settings.encoder.metadata.export :=
   [...settings.encoder.metadata.export(), "user", "avatar", "mode", "playcount"]
