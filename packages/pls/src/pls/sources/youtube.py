@@ -61,7 +61,7 @@ class YoutubePls:
                 artists = (
                     ", ".join(artist["name"] for artist in result["artists"])
                     if "artists" in result
-                    else result["author"]
+                    else result.get("author", "?")
                 )
 
                 return Summary(
